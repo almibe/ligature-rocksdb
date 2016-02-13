@@ -9,14 +9,14 @@ import org.apache.felix.dm.DependencyManager
 import org.libraryweasel.servo.LibraryWeaselComponentRegistrar
 import org.osgi.framework.BundleContext
 
-class Activator() : DependencyActivatorBase {
-    @Override
-    fun init(context: BundleContext, manager: DependencyManager) {
-        registrar = LibraryWeaselComponentRegistrar(manager)
+class Activator : DependencyActivatorBase() {
+
+    override fun init(context: BundleContext, manager: DependencyManager) {
+        val registrar = LibraryWeaselComponentRegistrar(manager)
     }
 
-    @Override
-    fun destroy(context: BundleContext, manager: DependencyManager) {
+    override fun destroy(context: BundleContext, manager: DependencyManager) {
 
     }
 }
+

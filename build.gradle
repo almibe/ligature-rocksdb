@@ -27,10 +27,14 @@ dependencies {
     compile 'org.libraryweasel:library-weasel-plugin-api:0.1.0-SNAPSHOT'
     compile 'org.libraryweasel:library-weasel-servo:0.1.0-SNAPSHOT'
     testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
+    compile "org.jetbrains.kotlin:kotlin-osgi-bundle:$kotlin_version"
 }
 
 bundle {
     instruction 'Import-Package', '*'
     instruction 'Private-Package', 'org.libraryweasel.stinkpot.burrow.*'
     instruction 'Bundle-Activator', 'org.libraryweasel.stinkpot.burrow.Activator'
+}
+sourceSets {
+    main.java.srcDirs += 'src/main/kotlin'
 }
