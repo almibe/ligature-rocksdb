@@ -1,0 +1,32 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+    dependencies {
+        classpath 'org.dm.gradle:gradle-bundle-plugin:0.6.2'
+        classpath 'org.libraryweasel:library-weasel-gradle-plugin:0.0.1-SNAPSHOT'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: 'org.libraryweasel.gradleplugin'
+
+group 'org.libraryweasel'
+version '0.1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+dependencies {
+    compile 'org.libraryweasel:library-weasel-plugin-api:0.1.0-SNAPSHOT'
+    compile 'org.libraryweasel:library-weasel-servo:0.1.0-SNAPSHOT'
+}
+
+bundle {
+    instruction 'Import-Package', '*'
+    instruction 'Private-Package', 'org.libraryweasel.sample.*'
+    instruction 'Bundle-Activator', 'org.libraryweasel.sample.Activator'
+}
