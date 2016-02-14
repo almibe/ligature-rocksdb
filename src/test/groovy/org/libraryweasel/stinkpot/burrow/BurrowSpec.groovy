@@ -8,6 +8,8 @@ import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx
 import com.tinkerpop.blueprints.impls.orient.OrientGraph
 import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx
 import org.libraryweasel.database.api.DatabasePool
+import org.libraryweasel.stinkpot.ntriples.IRI
+import org.libraryweasel.stinkpot.ntriples.Triple
 import spock.lang.Specification
 
 public class BurrowSpec extends Specification {
@@ -17,7 +19,6 @@ public class BurrowSpec extends Specification {
 
     def setup() {
         inMemoryGraph = new OrientGraph('memory:test')
-        inMemoryGraph.create()
         burrow.databasePool = new DatabasePool() {
             @Override OrientGraph acquire() { return inMemoryGraph }
             @Override ODatabaseDocumentTx acquireRawDocument() { return null }
@@ -29,5 +30,13 @@ public class BurrowSpec extends Specification {
         inMemoryGraph.drop()
     }
 
-
+    def "check saving a simple triple made of three IRIs"() {
+        given:
+        def triple = new Triple(new IRI("http://example.org/#spiderman"),
+            new IRI("http://www.perceive.net/schemas/relationship/enemyOf"), new IRI("http://example.org/#green-goblin"))
+        when:
+        burrow.saveTriple(triple)
+        then:
+        inMemoryGraph.getVerticesOfClass("IRI").size() == 3
+    }
 }
