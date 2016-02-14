@@ -4,11 +4,21 @@
 
 package org.libraryweasel.stinkpot.burrow
 
+
+import org.libraryweasel.database.api.DatabasePool
+import org.libraryweasel.servo.Component
+import org.libraryweasel.servo.Service
 import org.libraryweasel.stinkpot.burrow.api.Burrow
 import org.libraryweasel.stinkpot.ntriples.Triple
 
+@Component(Burrow::class)
 class OrientDBBurrow : Burrow {
+
+    @Service
+    private var databasePool: DatabasePool? = null
+
     override fun saveTriple(triple: Triple) {
-        throw UnsupportedOperationException()
+        val graphdb = databasePool!!.acquire()
+
     }
 }

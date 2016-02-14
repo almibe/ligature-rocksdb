@@ -24,6 +24,7 @@ repositories {
 }
 
 dependencies {
+    compile 'org.libraryweasel:library-weasel-orientdb:0.1.0-SNAPSHOT'
     compile 'org.libraryweasel:library-weasel-plugin-api:0.1.0-SNAPSHOT'
     compile 'org.libraryweasel:library-weasel-servo:0.1.0-SNAPSHOT'
     compile 'org.libraryweasel:stinkpot:0.1.0-SNAPSHOT'
