@@ -9,8 +9,7 @@ import com.tinkerpop.blueprints.impls.orient.OrientGraph
 import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory
 import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx
 import org.libraryweasel.database.api.DatabasePool
-import org.libraryweasel.stinkpot.ntriples.IRI
-import org.libraryweasel.stinkpot.ntriples.Triple
+import org.libraryweasel.stinkpot.ntriples.*
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Stepwise
@@ -68,26 +67,38 @@ public class BurrowSpec extends Specification {
         testGraph.getEdgesOfClass("PredicateIRI").size() == 2
     }
 
-//    def "support literals in object"() {
-//        given:
-//        def triples = []
-//        triples.add(new Triple(new IRI("http://example.org/show/218"), new IRI("http://www.w3.org/2000/01/rdf-schema#label"), new TypedLiteral("That Seventies Show", new IRI("http://www.w3.org/2001/XMLSchema#string"))))
-//        triples.add(new Triple(new IRI("http://example.org/show/218"), new IRI("http://www.w3.org/2000/01/rdf-schema#label"), new PlainLiteral("That Seventies Show")))
-//        triples.add(new Triple(new IRI("http://example.org/show/218"), new IRI("http://example.org/show/localName"), new LangLiteral("That Seventies Show", "en")))
-//        triples.add(new Triple(new IRI("http://example.org/show/218"), new IRI("http://example.org/show/localName"), new LangLiteral("Cette Série des Années Septante", "fr-be")))
-//        triples.add(new Triple(new IRI("http://example.org/#spiderman"), new IRI("http://example.org/text"), new PlainLiteral("This is a multi-line\\nliteral with many quotes (\\\"\\\"\\\"\\\"\\\")\\nand two apostrophes ('').")))
-//        triples.add(new Triple(new IRI("http://en.wikipedia.org/wiki/Helium"), new IRI("http://example.org/elements/atomicNumber"), new TypedLiteral("2", new IRI("http://www.w3.org/2001/XMLSchema#integer"))))
-//        triples.add(new Triple(new IRI("http://en.wikipedia.org/wiki/Helium"), new IRI("http://example.org/elements/specificGravity"), new TypedLiteral("1.663E-4", new IRI("http://www.w3.org/2001/XMLSchema#double"))))
-//        when:
-//        triples.each { burrow.saveTriple(it) }
-//        then:
-//
-//    }
-//
-//    def "support sharing vertices if literal is the same"() {
-//
-//    }
-//
+    def "support literals in object"() {
+        given:
+        def triples = []
+        triples.add(new Triple(new IRI("http://example.org/show/218"), new IRI("http://www.w3.org/2000/01/rdf-schema#label"), new TypedLiteral("That Seventies Show", new IRI("http://www.w3.org/2001/XMLSchema#string"))))
+        triples.add(new Triple(new IRI("http://example.org/show/218"), new IRI("http://www.w3.org/2000/01/rdf-schema#label"), new PlainLiteral("That Seventies Show")))
+        triples.add(new Triple(new IRI("http://example.org/show/218"), new IRI("http://example.org/show/localName"), new LangLiteral("That Seventies Show", "en")))
+        when:
+        triples.each { burrow.saveTriple(it) }
+        then:
+        testGraph.getVerticesOfClass("IRI").size() == 4
+        testGraph.getVerticesOfClass("Literal").size() == 3
+        testGraph.getVerticesOfClass("LangLiteral").size() == 1
+        testGraph.getVerticesOfClass("PlainLiteral").size() == 1
+        testGraph.getVerticesOfClass("TypedLiteral").size() == 1
+    }
+
+    def "support sharing vertices if literal is the same"() {
+        given:
+        def triples = []
+        triples.add(new Triple(new IRI("http://otherexample.org/show/0xDEADBEEF"), new IRI("http://www.w3.org/2000/01/rdf-schema#label"), new TypedLiteral("That Seventies Show", new IRI("http://www.w3.org/2001/XMLSchema#string"))))
+        triples.add(new Triple(new IRI("http://otherexample.org/show/0xDEADBEEF"), new IRI("http://www.w3.org/2000/01/rdf-schema#label"), new PlainLiteral("That Seventies Show")))
+        triples.add(new Triple(new IRI("http://otherexample.org/show/0xDEADBEEF"), new IRI("http://example.org/show/localName"), new LangLiteral("That Seventies Show", "en")))
+        when:
+        triples.each { burrow.saveTriple(it) }
+        then:
+        testGraph.getVerticesOfClass("IRI").size() == 5
+        testGraph.getVerticesOfClass("Literal").size() == 3
+        testGraph.getVerticesOfClass("LangLiteral").size() == 1
+        testGraph.getVerticesOfClass("PlainLiteral").size() == 1
+        testGraph.getVerticesOfClass("TypedLiteral").size() == 1
+    }
+
 //    def "support blank nodes"() {
 //
 //    }
