@@ -6,28 +6,42 @@ package org.libraryweasel.stinkpot.burrow
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx
 import com.tinkerpop.blueprints.impls.orient.OrientGraph
+import com.tinkerpop.blueprints.impls.orient.OrientGraphFactory
 import com.tinkerpop.blueprints.impls.orient.OrientGraphNoTx
 import org.libraryweasel.database.api.DatabasePool
 import org.libraryweasel.stinkpot.ntriples.IRI
 import org.libraryweasel.stinkpot.ntriples.Triple
+import spock.lang.Shared
 import spock.lang.Specification
 
 public class BurrowSpec extends Specification {
 
+    @Shared
     def burrow = new OrientDBBurrow()
-    OrientGraph inMemoryGraph
+    @Shared
+    OrientGraphFactory graphFactory
+    @Shared
+    OrientGraph testGraph
 
-    def setup() {
-        inMemoryGraph = new OrientGraph('memory:test')
+    def setupSpec() {
+        graphFactory = new OrientGraphFactory('memory:test')
         burrow.databasePool = new DatabasePool() {
-            @Override OrientGraph acquire() { return inMemoryGraph }
+            @Override OrientGraph acquire() { return graphFactory.getTx() }
             @Override ODatabaseDocumentTx acquireRawDocument() { return null }
             @Override OrientGraphNoTx acquireNoTx() { return null }
         }
     }
 
+    def cleanupSpec() {
+        graphFactory.close()
+    }
+
+    def setup() {
+        testGraph = graphFactory.getTx()
+    }
+
     def cleanup() {
-        inMemoryGraph.drop()
+        testGraph.shutdown()
     }
 
     def "check saving a simple triple made of three IRIs"() {
@@ -37,6 +51,7 @@ public class BurrowSpec extends Specification {
         when:
         burrow.saveTriple(triple)
         then:
-        inMemoryGraph.getVerticesOfClass("IRI").size() == 3
+        testGraph.countVertices() == 2
+        testGraph.countEdges() == 1
     }
 }

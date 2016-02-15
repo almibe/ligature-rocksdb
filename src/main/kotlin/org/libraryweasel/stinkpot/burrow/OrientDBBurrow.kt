@@ -5,11 +5,13 @@
 package org.libraryweasel.stinkpot.burrow
 
 
+import com.tinkerpop.blueprints.impls.orient.OrientGraph
 import org.libraryweasel.database.api.DatabasePool
 import org.libraryweasel.servo.Component
 import org.libraryweasel.servo.Service
 import org.libraryweasel.stinkpot.burrow.api.Burrow
-import org.libraryweasel.stinkpot.ntriples.Triple
+import org.libraryweasel.stinkpot.ntriples.IRI
+
 
 @Component(Burrow::class)
 class OrientDBBurrow : Burrow {
@@ -17,8 +19,33 @@ class OrientDBBurrow : Burrow {
     @Service
     private var databasePool: DatabasePool? = null
 
-    override fun saveTriple(triple: Triple) {
-        val graphdb = databasePool!!.acquire()
+    fun checkSchema(graphdb: OrientGraph) {
+        if (graphdb.getEdgeType("PredicateIRI") == null) {
+            graphdb.createEdgeType("PredicateIRI")
+        }
+        if (graphdb.getVertexType("IRI") == null) {
+            graphdb.createVertexType("IRI")
+        }
+    }
 
+    override fun saveTriple(triple: org.libraryweasel.stinkpot.ntriples.Triple) {
+        val graphdb = databasePool!!.acquire()
+        checkSchema(graphdb)
+        val subject = triple.subject
+        val `object` = triple.`object`
+        val predicate = triple.predicate
+
+        if (subject is IRI && `object` is IRI && predicate is IRI) {
+            val vS = graphdb.addVertex("IRI")
+            val vO = graphdb.addVertex("IRI")
+
+            vS.setProperty("value", subject.value)
+            vO.setProperty("value", `object`.value)
+
+            val eP = graphdb.addEdge("class:predicateIRI", vS, vO, null)
+            eP.setProperty("value", predicate.value)
+        }
+        graphdb.commit()
+        graphdb.shutdown()
     }
 }
