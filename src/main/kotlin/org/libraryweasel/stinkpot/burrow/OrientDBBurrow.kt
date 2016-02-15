@@ -5,13 +5,16 @@
 package org.libraryweasel.stinkpot.burrow
 
 
+import com.tinkerpop.blueprints.Vertex
 import com.tinkerpop.blueprints.impls.orient.OrientGraph
 import org.libraryweasel.database.api.DatabasePool
 import org.libraryweasel.servo.Component
 import org.libraryweasel.servo.Service
 import org.libraryweasel.stinkpot.burrow.api.Burrow
 import org.libraryweasel.stinkpot.ntriples.IRI
-
+import org.libraryweasel.stinkpot.ntriples.Object
+import org.libraryweasel.stinkpot.ntriples.Predicate
+import org.libraryweasel.stinkpot.ntriples.Subject
 
 @Component(Burrow::class)
 class OrientDBBurrow : Burrow {
@@ -19,6 +22,7 @@ class OrientDBBurrow : Burrow {
     @Service
     private var databasePool: DatabasePool? = null
 
+    //TODO put index on value for all types
     fun checkSchema(graphdb: OrientGraph) {
         if (graphdb.getEdgeType("PredicateIRI") == null) {
             graphdb.createEdgeType("PredicateIRI")
@@ -31,17 +35,48 @@ class OrientDBBurrow : Burrow {
     override fun saveTriple(triple: org.libraryweasel.stinkpot.ntriples.Triple) {
         val graphdb = databasePool!!.acquire()
         checkSchema(graphdb)
-        val subject = triple.subject
-        val `object` = triple.`object`
-        val predicate = triple.predicate
 
-        if (subject is IRI && `object` is IRI && predicate is IRI) {
-            val vS = graphdb.addVertex("class:IRI", "value", subject.value)
-            val vO = graphdb.addVertex("class:IRI", "value", `object`.value)
-            val eP = graphdb.addEdge("class:PredicateIRI", vS, vO, null)
-            eP.setProperty("value", predicate.value)
-        }
+        val subjectVertex = fetchOrAddSubject(triple.subject, graphdb)
+        val objectVertex = fetchOrAddObject(triple.`object`, graphdb)
+        addPredicate(triple.predicate, subjectVertex, objectVertex, graphdb)
+
         graphdb.commit()
         graphdb.shutdown()
+    }
+
+    fun fetchOrAddSubject(subject: Subject, graphdb: OrientGraph): Vertex {
+        if (subject is IRI) {
+            val result = graphdb.query().has("@class", "IRI").has("value", subject.value).vertices()
+            if (result.iterator().hasNext()) {
+                return result.first()
+            } else {
+                return graphdb.addVertex("class:IRI", "value", subject.value)
+            }
+        } else {
+            throw RuntimeException("can't handle non IRI subjects")
+        }
+    }
+
+    fun fetchOrAddObject(`object`: Object, graphdb: OrientGraph): Vertex {
+        if (`object` is IRI) {
+            val result = graphdb.query().has("@class", "IRI").has("value", `object`.value).vertices()
+            if (result.iterator().hasNext()) {
+                return result.first()
+            } else {
+                return graphdb.addVertex("class:IRI", "value", `object`.value)
+            }
+        } else {
+            throw RuntimeException("can't handle non IRI objects")
+        }
+    }
+
+    fun addPredicate(predicate: Predicate, subjectVertx: Vertex, objectVertex: Vertex,
+             graphdb: OrientGraph) {
+        if (predicate is IRI) {
+            val eP = graphdb.addEdge("class:PredicateIRI", subjectVertx, objectVertex, null)
+            eP.setProperty("value", predicate.value)
+        } else {
+            throw RuntimeException("can't handle non IRI predicates")
+        }
     }
 }
