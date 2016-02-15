@@ -36,13 +36,9 @@ class OrientDBBurrow : Burrow {
         val predicate = triple.predicate
 
         if (subject is IRI && `object` is IRI && predicate is IRI) {
-            val vS = graphdb.addVertex("IRI")
-            val vO = graphdb.addVertex("IRI")
-
-            vS.setProperty("value", subject.value)
-            vO.setProperty("value", `object`.value)
-
-            val eP = graphdb.addEdge("class:predicateIRI", vS, vO, null)
+            val vS = graphdb.addVertex("class:IRI", "value", subject.value)
+            val vO = graphdb.addVertex("class:IRI", "value", `object`.value)
+            val eP = graphdb.addEdge("class:PredicateIRI", vS, vO, null)
             eP.setProperty("value", predicate.value)
         }
         graphdb.commit()

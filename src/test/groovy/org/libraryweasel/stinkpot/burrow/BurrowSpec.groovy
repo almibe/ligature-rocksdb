@@ -51,7 +51,7 @@ public class BurrowSpec extends Specification {
         when:
         burrow.saveTriple(triple)
         then:
-        testGraph.countVertices() == 2
-        testGraph.countEdges() == 1
+        testGraph.getVerticesOfClass("IRI").size() == 2
+        testGraph.getEdgesOfClass("PredicateIRI").size() == 1
     }
 }
