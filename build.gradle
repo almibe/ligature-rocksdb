@@ -1,13 +1,10 @@
 buildscript {
-    ext.kotlin_version = '1.0.0-rc-1036'
     repositories {
         mavenCentral()
         mavenLocal()
     }
     dependencies {
-        classpath 'org.dm.gradle:gradle-bundle-plugin:0.8'
         classpath 'org.libraryweasel:library-weasel-gradle-plugin:0.0.1-SNAPSHOT'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
