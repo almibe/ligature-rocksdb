@@ -8,8 +8,6 @@ buildscript {
     }
 }
 
-apply plugin: 'kotlin'
-apply plugin: 'groovy'
 apply plugin: 'org.libraryweasel.gradleplugin'
 
 group 'org.libraryweasel'
@@ -21,12 +19,12 @@ repositories {
 }
 
 dependencies {
-    compile 'org.libraryweasel:library-weasel-orientdb:0.1.0-SNAPSHOT'
-    compile 'org.libraryweasel:library-weasel-plugin-api:0.1.0-SNAPSHOT'
-    compile 'org.libraryweasel:library-weasel-servo:0.1.0-SNAPSHOT'
-    compile 'org.libraryweasel:stinkpot:0.1.0-SNAPSHOT'
-    testCompile 'org.spockframework:spock-core:1.0-groovy-2.4'
-    compile "org.jetbrains.kotlin:kotlin-osgi-bundle:$kotlin_version"
+    compile kotlinDep
+    compile libraryWeaselOrientdbDep
+    compile libraryWeaselPluginApiDep
+    compile libraryWeaselServoDep
+    compile stinkpotDep
+    testCompile spockDep
 }
 
 bundle {
@@ -34,8 +32,4 @@ bundle {
     instruction 'Private-Package', 'org.libraryweasel.stinkpot.burrow'
     instruction 'Export-Package', 'org.libraryweasel.stinkpot.burrow.api'
     instruction 'Bundle-Activator', 'org.libraryweasel.stinkpot.burrow.Activator'
-}
-
-sourceSets {
-    main.java.srcDirs += 'src/main/kotlin'
 }
