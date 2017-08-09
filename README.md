@@ -1,3 +1,3 @@
-# stinkpot-burrow
+# ligature-store
 
-A library for storing Stinkpot's data model in an Library Weasel's OrientDB based graph database.
+A library for storing Ligature's data model in an OrientDB based graph database.
