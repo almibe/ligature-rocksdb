@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package org.libraryweasel.stinkpot.burrow
+package org.almibe.ligature.store
 
 import com.orientechnologies.orient.core.db.document.ODatabaseDocumentTx
 import com.tinkerpop.blueprints.impls.orient.OrientGraph
@@ -15,10 +15,10 @@ import spock.lang.Specification
 import spock.lang.Stepwise
 
 @Stepwise
-public class BurrowSpec extends Specification {
+public class LigatureStoreSpec extends Specification {
 
     @Shared
-    def burrow = new OrientDBBurrow()
+    def burrow = new OrientDBLigatureStore()
     @Shared
     OrientGraphFactory graphFactory
     @Shared

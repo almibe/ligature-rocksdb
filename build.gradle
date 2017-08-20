@@ -1,35 +1,28 @@
-buildscript {
-    repositories {
-        mavenCentral()
-        mavenLocal()
-    }
-    dependencies {
-        classpath 'org.libraryweasel:library-weasel-gradle-plugin:0.0.1-SNAPSHOT'
-    }
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.1.4'
+    id 'org.dm.bundle' version '0.10.0'
+    id 'groovy'
+    id 'maven'
 }
 
-apply plugin: 'org.libraryweasel.gradleplugin'
-
-group 'org.libraryweasel'
+group 'org.almibe'
 version '0.1.0-SNAPSHOT'
 
 repositories {
-    mavenCentral()
+    jcenter()
     mavenLocal()
 }
 
 dependencies {
-    compile kotlinDep
-    compile libraryWeaselOrientdbDep
-    compile libraryWeaselPluginApiDep
-    compile libraryWeaselServoDep
-    compile stinkpotDep
-    testCompile spockDep
+    compile 'com.orientechnologies:orientdb-graphdb:3.0.0m2'
+    compile 'org.jetbrains.kotlin:kotlin-stdlib:1.1.4'
+    compile 'org.almibe:ligature:0.1.0-SNAPSHOT'
+    testCompile 'org.codehaus.groovy:groovy-all:2.4.10'
+    testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'
 }
 
 bundle {
     instruction 'Import-Package', '*'
-    instruction 'Private-Package', 'org.libraryweasel.stinkpot.burrow'
-    instruction 'Export-Package', 'org.libraryweasel.stinkpot.burrow.api'
-    instruction 'Bundle-Activator', 'org.libraryweasel.stinkpot.burrow.Activator'
+    instruction 'Private-Package', 'org.almibe.ligature.store'
+    instruction 'Export-Package', 'org.almibe.ligature.store.api'
 }
