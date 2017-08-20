@@ -23,6 +23,5 @@ dependencies {
 
 bundle {
     instruction 'Import-Package', '*'
-    instruction 'Private-Package', 'org.almibe.ligature.store'
-    instruction 'Export-Package', 'org.almibe.ligature.store.api'
+    instruction 'Export-Package', 'org.almibe.ligature.store'
 }
