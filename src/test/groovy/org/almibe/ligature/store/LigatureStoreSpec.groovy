@@ -9,6 +9,7 @@ import com.orientechnologies.orient.core.db.ODatabaseType
 import com.orientechnologies.orient.core.db.OrientDB
 import com.orientechnologies.orient.core.db.OrientDBConfig
 import kotlin.Pair
+import org.almibe.ligature.BlankNode
 import org.almibe.ligature.IRI
 import org.almibe.ligature.LangLiteral
 import org.almibe.ligature.TypedLiteral
@@ -76,7 +77,21 @@ class LigatureStoreSpec extends Specification {
         ].toSet()
     }
 
-//    def "support blank nodes"() {
-//
-//    }
+    def "support blank nodes"() {
+        given:
+        def test = new BlankNode("test")
+        def test2 = new BlankNode("test2")
+        def test3 = new BlankNode("test3")
+        when:
+        store.addStatement(test, new IRI("http://www.w3.org/2000/01/rdf-schema#label"),
+            test2)
+        store.addStatement(test3, new IRI("http://www.w3.org/2000/01/rdf-schema#label"),
+                new LangLiteral("Test 3", "en"))
+        then:
+        store.statementsFor(test) == [new Pair(new IRI("http://www.w3.org/2000/01/rdf-schema#label"), test2)].toSet()
+        store.statementsFor(test2) == [].toSet()
+        store.statementsFor(test3) == [
+                new Pair(new IRI("http://www.w3.org/2000/01/rdf-schema#label"),
+                    new LangLiteral("Test 3", "en"))].toSet()
+    }
 }

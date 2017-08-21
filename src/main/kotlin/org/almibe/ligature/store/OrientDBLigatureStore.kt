@@ -129,32 +129,34 @@ class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
     override fun statementsFor(subject: Subject): Set<Pair<Predicate, Object>> {
         val results = HashSet<Pair<Predicate, Object>>()
         val db = databasePool.acquire()
-        when (subject) {
+        val vertexStream = when (subject) {
             is IRI -> {
                 val rs = db.query("SELECT FROM IRI WHERE value = ?", subject.value)
-                rs.vertexStream().forEach { subjectVertex ->
-                    subjectVertex.getEdges(ODirection.OUT).forEach { edge ->
-                        val predicate = IRI(edge.getProperty("value"))
-                        val `object` = edge.to
-                        val resultObject = if (`object`.schemaType.get().name == "IRI") {
-                            IRI(`object`.getProperty("value"))
-                        } else if (`object`.schemaType.get().name == "TypedLiteral") {
-                            TypedLiteral(`object`.getProperty("value"), IRI(`object`.getProperty("type")))
-                        } else if (`object`.schemaType.get().name == "LangLiteral") {
-                            LangLiteral(`object`.getProperty("value"), `object`.getProperty("langTag"))
-                        } else if (`object`.schemaType.get().name == "BlankNode") {
-                            BlankNode(`object`.getProperty("label"))
-                        } else {
-                            throw RuntimeException("Unexpected object $`object`")
-                        }
-                        results.add(Pair(predicate, resultObject))
-                    }
-                }
+                rs.vertexStream()
             }
             is BlankNode -> {
-                TODO()
+                val rs = db.query("SELECT FROM BlankNode WHERE label = ?", subject.label)
+                rs.vertexStream()
             }
             else -> throw RuntimeException("Unexpected subject $subject")
+        }
+        vertexStream.forEach { subjectVertex ->
+            subjectVertex.getEdges(ODirection.OUT).forEach { edge ->
+                val predicate = IRI(edge.getProperty("value"))
+                val `object` = edge.to
+                val resultObject = if (`object`.schemaType.get().name == "IRI") {
+                    IRI(`object`.getProperty("value"))
+                } else if (`object`.schemaType.get().name == "TypedLiteral") {
+                    TypedLiteral(`object`.getProperty("value"), IRI(`object`.getProperty("type")))
+                } else if (`object`.schemaType.get().name == "LangLiteral") {
+                    LangLiteral(`object`.getProperty("value"), `object`.getProperty("langTag"))
+                } else if (`object`.schemaType.get().name == "BlankNode") {
+                    BlankNode(`object`.getProperty("label"))
+                } else {
+                    throw RuntimeException("Unexpected object $`object`")
+                }
+                results.add(Pair(predicate, resultObject))
+            }
         }
         db.close()
         return results
