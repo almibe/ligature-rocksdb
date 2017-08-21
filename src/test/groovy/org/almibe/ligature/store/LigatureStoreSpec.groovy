@@ -29,6 +29,9 @@ class LigatureStoreSpec extends Specification {
         orientDB.create("test", ODatabaseType.MEMORY)
         pool = new ODatabasePool(orientDB,"test","admin","admin")
         store = new OrientDBLigatureStore(pool)
+        def db = pool.acquire()
+        db.createVertexClass("IRI")
+        db.close()
     }
 
     def cleanupSpec() {

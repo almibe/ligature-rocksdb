@@ -72,7 +72,16 @@ class OrientDBLigatureStore(val databasePool: ODatabasePool): Model {
     }
 
     override fun getIRIs(): Set<IRI> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val db = databasePool.acquire()
+        val iris = HashSet<IRI>()
+        val resultSet = db.browseClass("IRI")//db.query("SELECT FROM IRI")
+        while (resultSet.hasNext()) {
+            val result = resultSet.next()
+            val value = result.getProperty<String>("value")
+            iris.add(IRI(value))
+        }
+        db.close()
+        return iris
     }
 
     override fun getLiterals(): Set<Literal> {
