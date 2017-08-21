@@ -132,14 +132,14 @@ class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
         when (subject) {
             is IRI -> {
                 val rs = db.query("SELECT FROM IRI WHERE value = ?", subject.value)
-                rs.vertexStream().forEach { subject ->
-                    subject.getEdges(ODirection.OUT).forEach { edge ->
+                rs.vertexStream().forEach { subjectVertex ->
+                    subjectVertex.getEdges(ODirection.OUT).forEach { edge ->
                         val predicate = IRI(edge.getProperty("value"))
                         val `object` = edge.to
                         val resultObject = if (`object`.schemaType.get().name == "IRI") {
                             IRI(`object`.getProperty("value"))
                         } else if (`object`.schemaType.get().name == "TypedLiteral") {
-                            TypedLiteral(`object`.getProperty("value"), `object`.getProperty("type"))
+                            TypedLiteral(`object`.getProperty("value"), IRI(`object`.getProperty("type")))
                         } else if (`object`.schemaType.get().name == "LangLiteral") {
                             LangLiteral(`object`.getProperty("value"), `object`.getProperty("langTag"))
                         } else if (`object`.schemaType.get().name == "BlankNode") {
