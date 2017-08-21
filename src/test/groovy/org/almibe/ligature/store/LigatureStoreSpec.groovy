@@ -5,6 +5,7 @@
 package org.almibe.ligature.store
 
 import com.orientechnologies.orient.core.db.ODatabasePool
+import com.orientechnologies.orient.core.db.ODatabaseType
 import com.orientechnologies.orient.core.db.OrientDB
 import com.orientechnologies.orient.core.db.OrientDBConfig
 import kotlin.Pair
@@ -18,13 +19,16 @@ import spock.lang.Stepwise
 @Stepwise
 class LigatureStoreSpec extends Specification {
     @Shared
-    OrientDB orientDB = new OrientDB("memory:test","root","root_passwd",OrientDBConfig.defaultConfig())
+    OrientDB orientDB = new OrientDB("memory:test",OrientDBConfig.defaultConfig())
     @Shared
-    ODatabasePool pool = new ODatabasePool(orientDB,"test","admin","admin")
+    ODatabasePool pool
     @Shared
-    def store = new OrientDBLigatureStore(pool)
+    def store
 
     def setupSpec() {
+        orientDB.create("test", ODatabaseType.MEMORY)
+        pool = new ODatabasePool(orientDB,"test","admin","admin")
+        store = new OrientDBLigatureStore(pool)
     }
 
     def cleanupSpec() {
