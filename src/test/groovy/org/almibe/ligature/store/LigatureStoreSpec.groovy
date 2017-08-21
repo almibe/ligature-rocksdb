@@ -55,7 +55,6 @@ class LigatureStoreSpec extends Specification {
                 new IRI("http://example.org/#black-cat"))
         then:
         store.IRIs.size() == 4
-        store.objects.size() == 2
         store.statementsFor(new IRI("http://example.org/#spiderman")).size() == 2
     }
 

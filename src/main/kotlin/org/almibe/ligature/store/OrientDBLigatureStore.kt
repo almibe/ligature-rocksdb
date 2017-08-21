@@ -10,6 +10,7 @@ import com.orientechnologies.orient.core.record.ODirection
 import com.orientechnologies.orient.core.record.OEdge
 import com.orientechnologies.orient.core.record.OVertex
 import org.almibe.ligature.*
+import java.util.stream.Stream
 
 class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
 
@@ -83,7 +84,7 @@ class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
         TODO("finish")
     }
 
-    override fun getIRIs(): Set<IRI> {
+    fun getIRIs(): Set<IRI> {
         val db = databasePool.acquire()
         val iris = HashSet<IRI>()
         var resultSet = db.browseClass("IRI")
@@ -102,20 +103,13 @@ class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
         return iris
     }
 
-    override fun getLiterals(): Set<Literal> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getObjects(): Set<Object> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getPredicates(): Set<Predicate> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getSubjects(): Set<Subject> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun getSubjects(): Stream<Subject> {
+        val db = databasePool.acquire()
+        val vertexStream = db.query("SELECT FROM IRI").vertexStream()
+        vertexStream.onClose { db.close() }
+        return vertexStream.map { vertex ->
+            IRI(vertex.getProperty("value"))
+        }
     }
 
     override fun statementsFor(subject: Subject): Set<Pair<Predicate, Object>> {
