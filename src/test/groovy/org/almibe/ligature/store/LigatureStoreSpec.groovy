@@ -68,9 +68,6 @@ class LigatureStoreSpec extends Specification {
                 new LangLiteral("That Seventies Show", "en"))
         then:
         store.IRIs.size() == 8
-        store.literals == [
-                new TypedLiteral("That Seventies Show", new IRI("http://www.w3.org/2001/XMLSchema#string")),
-                new LangLiteral("That Seventies Show", "en")].toSet()
         store.statementsFor(new IRI("http://example.org/show/218")) == [
                 new Pair(new IRI("http://example.org/show/localName"),
                     new LangLiteral("That Seventies Show", "en")),
