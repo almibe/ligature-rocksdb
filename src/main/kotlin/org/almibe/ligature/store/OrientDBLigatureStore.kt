@@ -6,11 +6,23 @@ package org.almibe.ligature.store
 
 import com.orientechnologies.orient.core.db.ODatabasePool
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument
+import com.orientechnologies.orient.core.record.ODirection
 import com.orientechnologies.orient.core.record.OEdge
 import com.orientechnologies.orient.core.record.OVertex
 import org.almibe.ligature.*
 
-class OrientDBLigatureStore(val databasePool: ODatabasePool): Model {
+class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
+
+    init {
+        val db = databasePool.acquire()
+        db.createVertexClass("IRI")
+        db.createEdgeClass("IRIEdge")
+        db.createVertexClass("BlankNode")
+        db.createVertexClass("TypedLiteral")
+        db.createVertexClass("LangLiteral")
+        db.close()
+    }
+
     override fun addModel(model: ReadOnlyModel) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -35,7 +47,7 @@ class OrientDBLigatureStore(val databasePool: ODatabasePool): Model {
             }
 
             if (predicate is IRI) {
-                val edge = subjectVertex.addEdge(objectVertex, "IRI")
+                val edge = subjectVertex.addEdge(objectVertex, "IRIEdge")
                 edge.setProperty("value",predicate.value)
                 edge.save<OEdge>()
             } else {
@@ -74,7 +86,13 @@ class OrientDBLigatureStore(val databasePool: ODatabasePool): Model {
     override fun getIRIs(): Set<IRI> {
         val db = databasePool.acquire()
         val iris = HashSet<IRI>()
-        val resultSet = db.browseClass("IRI")//db.query("SELECT FROM IRI")
+        var resultSet = db.browseClass("IRI")
+        while (resultSet.hasNext()) {
+            val result = resultSet.next()
+            val value = result.getProperty<String>("value")
+            iris.add(IRI(value))
+        }
+        resultSet = db.browseClass("IRIEdge")
         while (resultSet.hasNext()) {
             val result = resultSet.next()
             val value = result.getProperty<String>("value")
@@ -101,6 +119,19 @@ class OrientDBLigatureStore(val databasePool: ODatabasePool): Model {
     }
 
     override fun statementsFor(subject: Subject): Set<Pair<Predicate, Object>> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        val results = HashSet<Pair<Predicate, Object>>()
+        val db = databasePool.acquire()
+        if (subject is IRI) {
+            val rs = db.query("SELECT FROM IRI WHERE value = ?", subject.value)
+            rs.vertexStream().forEach { subject ->
+                subject.getEdges(ODirection.OUT).forEach { edge ->
+                    val predicate = IRI(edge.getProperty("value"))
+                    val `object` = IRI(edge.to.getProperty("value")) //TODO object might not be an IRI
+                    results.add(Pair(predicate, `object`))
+                }
+            }
+        }
+        db.close()
+        return results
     }
 }
