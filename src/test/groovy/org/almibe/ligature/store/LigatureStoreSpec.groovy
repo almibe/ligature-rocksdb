@@ -94,4 +94,17 @@ class LigatureStoreSpec extends Specification {
                 new Pair(new IRI("http://www.w3.org/2000/01/rdf-schema#label"),
                     new LangLiteral("Test 3", "en"))].toSet()
     }
+
+    def "support remove statement"() {
+        when:
+        store.removeStatement(new IRI("http://example.org/#spiderman"),
+                new IRI("http://www.perceive.net/schemas/relationship/enemyOf"),
+                new IRI("http://example.org/#green-goblin"))
+        then:
+        store.IRIs.size() == 7
+    }
+
+    def "support remove subject"() {
+
+    }
 }
