@@ -20,7 +20,7 @@ import spock.lang.Stepwise
 @Stepwise
 class LigatureStoreSpec extends Specification {
     @Shared
-    OrientDB orientDB = new OrientDB("memory:test",OrientDBConfig.defaultConfig())
+    OrientDB orientDB = new OrientDB("memory:test", OrientDBConfig.defaultConfig())
     @Shared
     ODatabasePool pool
     @Shared
@@ -28,7 +28,7 @@ class LigatureStoreSpec extends Specification {
 
     def setupSpec() {
         orientDB.create("test", ODatabaseType.MEMORY)
-        pool = new ODatabasePool(orientDB,"test","admin","admin")
+        pool = new ODatabasePool(orientDB, "test", "admin", "admin")
         store = new OrientDBLigatureStore(pool)
     }
 
@@ -46,7 +46,7 @@ class LigatureStoreSpec extends Specification {
         store.IRIs.size() == 3
         store.statementsFor(new IRI("http://example.org/#spiderman")).first() ==
                 new Pair(new IRI("http://www.perceive.net/schemas/relationship/enemyOf"),
-                new IRI("http://example.org/#green-goblin"))
+                        new IRI("http://example.org/#green-goblin"))
     }
 
     def "support sharing vertices if IRI is the same"() {
@@ -71,9 +71,9 @@ class LigatureStoreSpec extends Specification {
         store.IRIs.size() == 8
         store.statementsFor(new IRI("http://example.org/show/218")) == [
                 new Pair(new IRI("http://example.org/show/localName"),
-                    new LangLiteral("That Seventies Show", "en")),
+                        new LangLiteral("That Seventies Show", "en")),
                 new Pair(new IRI("http://www.w3.org/2000/01/rdf-schema#label"),
-                    new TypedLiteral("That Seventies Show", new IRI("http://www.w3.org/2001/XMLSchema#string")))
+                        new TypedLiteral("That Seventies Show", new IRI("http://www.w3.org/2001/XMLSchema#string")))
         ].toSet()
     }
 
@@ -84,7 +84,7 @@ class LigatureStoreSpec extends Specification {
         def test3 = new BlankNode("test3")
         when:
         store.addStatement(test, new IRI("http://www.w3.org/2000/01/rdf-schema#label"),
-            test2)
+                test2)
         store.addStatement(test3, new IRI("http://www.w3.org/2000/01/rdf-schema#label"),
                 new LangLiteral("Test 3", "en"))
         then:
@@ -92,7 +92,7 @@ class LigatureStoreSpec extends Specification {
         store.statementsFor(test2) == [].toSet()
         store.statementsFor(test3) == [
                 new Pair(new IRI("http://www.w3.org/2000/01/rdf-schema#label"),
-                    new LangLiteral("Test 3", "en"))].toSet()
+                        new LangLiteral("Test 3", "en"))].toSet()
     }
 
     def "support remove statement"() {
@@ -101,10 +101,14 @@ class LigatureStoreSpec extends Specification {
                 new IRI("http://www.perceive.net/schemas/relationship/enemyOf"),
                 new IRI("http://example.org/#green-goblin"))
         then:
-        store.IRIs.size() == 7
+        store.IRIs.size() == 8
     }
 
-    def "support remove subject"() {
-
-    }
+//    def "support remove subject"() {
+//
+//    }
+//
+//    def "support add model"() {
+//
+//    }
 }

@@ -9,8 +9,10 @@ import com.orientechnologies.orient.core.db.ODatabaseSession
 import com.orientechnologies.orient.core.db.document.ODatabaseDocument
 import com.orientechnologies.orient.core.record.ODirection
 import com.orientechnologies.orient.core.record.OEdge
+import com.orientechnologies.orient.core.record.ORecord
 import com.orientechnologies.orient.core.record.OVertex
 import org.almibe.ligature.*
+import java.util.stream.Collectors
 import java.util.stream.Stream
 
 class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
@@ -61,6 +63,22 @@ class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
                 throw RuntimeException("Unexpected predicate type $predicate")
             }
 
+            db.commit()
+        } catch (ex: Exception) {
+            db.rollback()
+        }
+        db.close()
+    }
+
+    override fun addSubject(subject: Subject) {
+        val db = databasePool.acquire()
+        try {
+            db.begin()
+            when (subject) {
+                is IRI -> createIRI(subject, db)
+                is BlankNode -> createBlankNode(subject, db)
+                else -> throw RuntimeException("Unexpected subject type $subject")
+            }
             db.commit()
         } catch (ex: Exception) {
             db.rollback()
@@ -123,13 +141,14 @@ class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
         return iris
     }
 
-    override fun getSubjects(): Stream<Subject> {
+    override fun getSubjects(): Set<Subject> {
         val db = databasePool.acquire()
         val vertexStream = db.query("SELECT FROM IRI").vertexStream()
-        vertexStream.onClose { db.close() }
-        return vertexStream.map { vertex ->
+        val result = vertexStream.map { vertex ->
             IRI(vertex.getProperty("value"))
-        }
+        }.collect(Collectors.toSet())
+        db.close()
+        return result
     }
 
     override fun statementsFor(subject: Subject): Set<Pair<Predicate, Object>> {
@@ -161,21 +180,32 @@ class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
     override fun removeStatement(subject: Subject, predicate: Predicate, `object`: Object) {
         val db = databasePool.acquire()
         db.use {
-            val subjectVertex = subjectToVertex(subject, db).findFirst().get()
-            val predicateEdge = subjectVertex.getEdges(ODirection.OUT).filter { edge ->
-                predicate is IRI && predicate.value == edge.getProperty<String>("value") && vertexAndObjectEqual(edge.to, `object`)
-            }
-
+            removeStatement(subject, predicate, `object`, db)
         }
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun removeSubject(subject: Subject) {
+        val statements = statementsFor(subject)
         val db = databasePool.acquire()
         db.use {
-
+            statements.forEach { statement: Pair<Predicate, Object> ->
+                removeStatement(subject, statement.first, statement.second, db)
+            }
         }
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    }
+
+    private fun removeStatement(subject: Subject, predicate: Predicate, `object`: Object, db: ODatabaseSession) {
+        val subjectVertex = subjectToVertex(subject, db).findFirst().get()
+        val predicateEdge = subjectVertex.getEdges(ODirection.OUT).first { edge ->
+            predicate is IRI && predicate.value == edge.getProperty<String>("value") && vertexAndObjectEqual(edge.to, `object`)
+        }
+        val objectVertex = predicateEdge.to
+        predicateEdge.delete<ORecord>()
+        val objectType = objectVertex.getProperty<String>("type")
+        if (objectType == LANG_LITERAL_CLASS || objectType == TYPED_LITERAL_CLASS) {
+            objectVertex.delete<ORecord>()
+        }
+        db.commit()
     }
 
     private fun subjectToVertex(subject: Subject, db: ODatabaseSession): Stream<OVertex> {
@@ -193,7 +223,7 @@ class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
     }
 
     private fun vertexAndObjectEqual(vertex: OVertex, `object`: Object): Boolean {
-        val vertexType = vertex.schemaType.toString()
+        val vertexType = vertex.schemaType.get().toString()
         return when (`object`) {
             is IRI -> vertexType == IRI_CLASS && `object`.value == vertex.getProperty<String>("value")
             is BlankNode -> vertexType == BLANK_NODE_CLASS && `object`.label == vertex.getProperty<String>("label")
