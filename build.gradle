@@ -1,5 +1,5 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.1.4'
+    id 'org.jetbrains.kotlin.jvm' version '1.1.60'
     id 'org.dm.bundle' version '0.10.0'
     id 'groovy'
     id 'maven'
@@ -14,8 +14,8 @@ repositories {
 }
 
 dependencies {
-    compile 'com.orientechnologies:orientdb-graphdb:3.0.0m2'
-    compile 'org.jetbrains.kotlin:kotlin-stdlib:1.1.4'
+    compile 'org.jetbrains.xodus:xodus-entity-store:1.1.0'
+    compile 'org.jetbrains.kotlin:kotlin-stdlib:1.1.60'
     compile 'org.almibe:ligature:0.1.0-SNAPSHOT'
     testCompile 'org.codehaus.groovy:groovy-all:2.4.10'
     testCompile 'org.spockframework:spock-core:1.1-groovy-2.4'

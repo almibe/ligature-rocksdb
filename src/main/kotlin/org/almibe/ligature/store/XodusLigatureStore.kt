@@ -4,70 +4,54 @@
 
 package org.almibe.ligature.store
 
-import com.orientechnologies.orient.core.db.ODatabasePool
-import com.orientechnologies.orient.core.db.ODatabaseSession
-import com.orientechnologies.orient.core.db.document.ODatabaseDocument
-import com.orientechnologies.orient.core.record.ODirection
-import com.orientechnologies.orient.core.record.OEdge
-import com.orientechnologies.orient.core.record.ORecord
-import com.orientechnologies.orient.core.record.OVertex
+import jetbrains.exodus.entitystore.PersistentEntityStore
 import org.almibe.ligature.*
 import java.util.stream.Collectors
 import java.util.stream.Stream
 
-class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
-    private val IRI_CLASS = "IRI"
-    private val IRI_EDGE_CLASS = "IRIEdge"
-    private val TYPED_LITERAL_CLASS = "TypedLiteral"
-    private val LANG_LITERAL_CLASS = "LangLiteral"
-    private val BLANK_NODE_CLASS = "BlankNode"
-
-    init {
-        val db = databasePool.acquire()
-        if (db.getClass(IRI_CLASS) == null) db.createVertexClass(IRI_CLASS)
-        if (db.getClass(IRI_EDGE_CLASS) == null) db.createEdgeClass(IRI_EDGE_CLASS)
-        if (db.getClass(BLANK_NODE_CLASS) == null) db.createVertexClass(BLANK_NODE_CLASS)
-        if (db.getClass(TYPED_LITERAL_CLASS) == null) db.createVertexClass(TYPED_LITERAL_CLASS)
-        if (db.getClass(LANG_LITERAL_CLASS) == null) db.createVertexClass(LANG_LITERAL_CLASS)
-        db.close()
-    }
+class XodusLigatureStore(private val entityStore: PersistentEntityStore): Model {
+    private val iriClass = "ligature.IRI"
+    private val iriEdgeClass = "ligature.IRIEdge"
+    private val typedLiteralClass = "ligature.TypedLiteral"
+    private val langLiteralClass = "ligature.LangLiteral"
+    private val blankNodeClass = "ligature.BlankNode"
 
     override fun addModel(model: ReadOnlyModel) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
     override fun addStatement(subject: Subject, predicate: Predicate, `object`: Object) {
-        val db = databasePool.acquire()
-        try {
-            db.begin()
+        entityStore.executeInTransaction {
+            try {
+                db.begin()
 
-            val subjectVertex = when (subject) {
-                is IRI -> createIRI(subject, db)
-                is BlankNode -> createBlankNode(subject, db)
-                else -> throw RuntimeException("Unexpected subject type $subject")
+                val subjectVertex = when (subject) {
+                    is IRI -> createIRI(subject, db)
+                    is BlankNode -> createBlankNode(subject, db)
+                    else -> throw RuntimeException("Unexpected subject type $subject")
+                }
+
+                val objectVertex = when (`object`) {
+                    is IRI -> createIRI(`object`, db)
+                    is BlankNode -> createBlankNode(`object`, db)
+                    is LangLiteral -> createLangLiteral(`object`, db)
+                    is TypedLiteral -> createTypedLiteral(`object`, db)
+                    else -> throw RuntimeException("Unexpected object type $`object`")
+                }
+
+                if (predicate is IRI) {
+                    val edge = subjectVertex.addEdge(objectVertex, iriEdgeClass)
+                    edge.setProperty("value",predicate.value)
+                    edge.save<OEdge>()
+                } else {
+                    throw RuntimeException("Unexpected predicate type $predicate")
+                }
+
+                db.commit()
+            } catch (ex: Exception) {
+                db.rollback()
             }
-
-            val objectVertex = when (`object`) {
-                is IRI -> createIRI(`object`, db)
-                is BlankNode -> createBlankNode(`object`, db)
-                is LangLiteral -> createLangLiteral(`object`, db)
-                is TypedLiteral -> createTypedLiteral(`object`, db)
-                else -> throw RuntimeException("Unexpected object type $`object`")
-            }
-
-            if (predicate is IRI) {
-                val edge = subjectVertex.addEdge(objectVertex, IRI_EDGE_CLASS)
-                edge.setProperty("value",predicate.value)
-                edge.save<OEdge>()
-            } else {
-                throw RuntimeException("Unexpected predicate type $predicate")
-            }
-
-            db.commit()
-        } catch (ex: Exception) {
-            db.rollback()
         }
-        db.close()
     }
 
     override fun addSubject(subject: Subject) {
@@ -87,21 +71,21 @@ class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
     }
 
     private fun createIRI(iri: IRI, db: ODatabaseDocument): OVertex {
-        val vertex = db.newVertex(IRI_CLASS)
+        val vertex = db.newVertex(iriClass)
         vertex.setProperty("value", iri.value)
         vertex.save<OVertex>()
         return vertex
     }
 
     private fun createBlankNode(blankNode: BlankNode, db: ODatabaseDocument): OVertex {
-        val vertex = db.newVertex(BLANK_NODE_CLASS)
+        val vertex = db.newVertex(blankNodeClass)
         vertex.setProperty("label", blankNode.label)
         vertex.save<OVertex>()
         return vertex
     }
 
     private fun createLangLiteral(langLiteral: LangLiteral, db: ODatabaseDocument): OVertex {
-        val vertex = db.newVertex(LANG_LITERAL_CLASS)
+        val vertex = db.newVertex(langLiteralClass)
         vertex.setProperty("value", langLiteral.value)
         vertex.setProperty("langTag", langLiteral.langTag)
         vertex.save<OVertex>()
@@ -109,7 +93,7 @@ class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
     }
 
     private fun createTypedLiteral(typedLiteral: TypedLiteral, db: ODatabaseDocument): OVertex {
-        val vertex = db.newVertex(TYPED_LITERAL_CLASS)
+        val vertex = db.newVertex(typedLiteralClass)
         vertex.setProperty("value", typedLiteral.value)
         vertex.setProperty("type", typedLiteral.datatypeIRI.value)
         vertex.save<OVertex>()
@@ -119,19 +103,19 @@ class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
     fun getIRIs(): Set<IRI> {
         val db = databasePool.acquire()
         val iris = HashSet<IRI>()
-        var resultSet = db.browseClass(IRI_CLASS)
+        var resultSet = db.browseClass(iriClass)
         while (resultSet.hasNext()) {
             val result = resultSet.next()
             val value = result.getProperty<String>("value")
             iris.add(IRI(value))
         }
-        resultSet = db.browseClass(IRI_EDGE_CLASS)
+        resultSet = db.browseClass(iriEdgeClass)
         while (resultSet.hasNext()) {
             val result = resultSet.next()
             val value = result.getProperty<String>("value")
             iris.add(IRI(value))
         }
-        resultSet = db.browseClass(TYPED_LITERAL_CLASS)
+        resultSet = db.browseClass(typedLiteralClass)
         while (resultSet.hasNext()) {
             val result = resultSet.next()
             val value = result.getProperty<String>("type")
@@ -159,13 +143,13 @@ class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
             subjectVertex.getEdges(ODirection.OUT).forEach { edge ->
                 val predicate = IRI(edge.getProperty("value"))
                 val `object` = edge.to
-                val resultObject = if (`object`.schemaType.get().name == IRI_CLASS) {
+                val resultObject = if (`object`.schemaType.get().name == iriClass) {
                     IRI(`object`.getProperty("value"))
-                } else if (`object`.schemaType.get().name == TYPED_LITERAL_CLASS) {
+                } else if (`object`.schemaType.get().name == typedLiteralClass) {
                     TypedLiteral(`object`.getProperty("value"), IRI(`object`.getProperty("type")))
-                } else if (`object`.schemaType.get().name == LANG_LITERAL_CLASS) {
+                } else if (`object`.schemaType.get().name == langLiteralClass) {
                     LangLiteral(`object`.getProperty("value"), `object`.getProperty("langTag"))
-                } else if (`object`.schemaType.get().name == BLANK_NODE_CLASS) {
+                } else if (`object`.schemaType.get().name == blankNodeClass) {
                     BlankNode(`object`.getProperty("label"))
                 } else {
                     throw RuntimeException("Unexpected object $`object`")
@@ -202,7 +186,7 @@ class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
         val objectVertex = predicateEdge.to
         predicateEdge.delete<ORecord>()
         val objectType = objectVertex.getProperty<String>("type")
-        if (objectType == LANG_LITERAL_CLASS || objectType == TYPED_LITERAL_CLASS) {
+        if (objectType == langLiteralClass || objectType == typedLiteralClass) {
             objectVertex.delete<ORecord>()
         }
         db.commit()
@@ -225,11 +209,11 @@ class OrientDBLigatureStore(private val databasePool: ODatabasePool): Model {
     private fun vertexAndObjectEqual(vertex: OVertex, `object`: Object): Boolean {
         val vertexType = vertex.schemaType.get().toString()
         return when (`object`) {
-            is IRI -> vertexType == IRI_CLASS && `object`.value == vertex.getProperty<String>("value")
-            is BlankNode -> vertexType == BLANK_NODE_CLASS && `object`.label == vertex.getProperty<String>("label")
-            is LangLiteral -> vertexType == LANG_LITERAL_CLASS && `object`.langTag == vertex.getProperty<String>("langTag")
+            is IRI -> vertexType == iriClass && `object`.value == vertex.getProperty<String>("value")
+            is BlankNode -> vertexType == blankNodeClass && `object`.label == vertex.getProperty<String>("label")
+            is LangLiteral -> vertexType == langLiteralClass && `object`.langTag == vertex.getProperty<String>("langTag")
                 && `object`.value == vertex.getProperty<String>("value")
-            is TypedLiteral -> vertexType == TYPED_LITERAL_CLASS && `object`.datatypeIRI.value == vertex.getProperty<String>("type")
+            is TypedLiteral -> vertexType == typedLiteralClass && `object`.datatypeIRI.value == vertex.getProperty<String>("type")
                 && `object`.value == vertex.getProperty<String>("value")
             else -> throw RuntimeException("Unexpected object type $`object`")
         }

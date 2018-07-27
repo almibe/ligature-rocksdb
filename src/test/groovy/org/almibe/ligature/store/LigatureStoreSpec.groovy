@@ -4,15 +4,15 @@
 
 package org.almibe.ligature.store
 
-import com.orientechnologies.orient.core.db.ODatabasePool
-import com.orientechnologies.orient.core.db.ODatabaseType
-import com.orientechnologies.orient.core.db.OrientDB
-import com.orientechnologies.orient.core.db.OrientDBConfig
+import jetbrains.exodus.entitystore.PersistentEntityStore
+import jetbrains.exodus.entitystore.PersistentEntityStores
 import kotlin.Pair
 import org.almibe.ligature.BlankNode
 import org.almibe.ligature.IRI
 import org.almibe.ligature.LangLiteral
 import org.almibe.ligature.TypedLiteral
+import org.junit.ClassRule
+import org.junit.rules.TemporaryFolder
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Stepwise
@@ -20,21 +20,19 @@ import spock.lang.Stepwise
 @Stepwise
 class LigatureStoreSpec extends Specification {
     @Shared
-    OrientDB orientDB = new OrientDB("memory:test", OrientDBConfig.defaultConfig())
+    PersistentEntityStore entityStore
+    @Shared @ClassRule
+    TemporaryFolder tempFolder
     @Shared
-    ODatabasePool pool
-    @Shared
-    def store
+    XodusLigatureStore store
 
     def setupSpec() {
-        orientDB.create("test", ODatabaseType.MEMORY)
-        pool = new ODatabasePool(orientDB, "test", "admin", "admin")
-        store = new OrientDBLigatureStore(pool)
+        entityStore = PersistentEntityStores.newInstance(tempFolder.newFolder())
+        store = new XodusLigatureStore(entityStore)
     }
 
     def cleanupSpec() {
-        pool.close()
-        orientDB.close()
+        entityStore.close()
     }
 
     def "check saving a simple triple made of three IRIs"() {
