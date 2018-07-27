@@ -1,3 +1,3 @@
-# ligature-store
+# ligature-store-xodus
 
-A library for storing Ligature's data model in an OrientDB based graph database.
+A library for storing Ligature's data model in the Xodus database.
