@@ -37,9 +37,27 @@ class LigatureStoreSpec: StringSpec() {
             store.getDatasetNames().count() shouldBe 0
         }
 
-        "add statement and test it's existence" {
+        "add a statement and test its existence" {
             val store = XodusLigatureStore.open(InMemoryStorage)
             val testDataSet = store.getDataset("test")
+            testDataSet.addStatements(listOf(Quad(IRI("http://localhost/people/7"),
+                    IRI("http://localhost/people#name"),
+                    TypedLiteral("Alex"))))
+
+            testDataSet.findAll().count() shouldBe 1
+
+            listOf(testDataSet.findAll()).first() shouldBe Quad(IRI("http://localhost/people/7"),
+                    IRI("http://localhost/people#name"),
+                    TypedLiteral("Alex"))
+        }
+
+        "add a statement twice and test its existence" {
+            val store = XodusLigatureStore.open(InMemoryStorage)
+            val testDataSet = store.getDataset("test")
+            testDataSet.addStatements(listOf(Quad(IRI("http://localhost/people/7"),
+                    IRI("http://localhost/people#name"),
+                    TypedLiteral("Alex"))))
+
             testDataSet.addStatements(listOf(Quad(IRI("http://localhost/people/7"),
                     IRI("http://localhost/people#name"),
                     TypedLiteral("Alex"))))

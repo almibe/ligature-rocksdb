@@ -6,8 +6,8 @@ package org.almibe.ligature.store
 
 import jetbrains.exodus.env.Environment
 import jetbrains.exodus.env.StoreConfig
+import jetbrains.exodus.env.Transaction
 import org.almibe.ligature.*
-import java.lang.Exception
 import java.util.concurrent.locks.ReentrantLock
 import java.util.stream.Stream
 import kotlin.concurrent.withLock
@@ -16,7 +16,8 @@ internal object WriteLock {
     val lock = ReentrantLock()
 }
 
-internal class XodusDataset private constructor(private val name: String, private val environment: Environment): Dataset {
+internal class XodusDataset private constructor(private val name: String,
+                                                private val environment: Environment): Dataset {
     companion object {
         val suffixes = mapOf(
             "cntr" to "#cntr",
@@ -45,7 +46,7 @@ internal class XodusDataset private constructor(private val name: String, privat
 
         fun delete(name: String, environment: Environment) {
             WriteLock.lock.withLock {
-                environment.executeInTransaction {  txn ->
+                environment.executeInExclusiveTransaction {  txn ->
                     suffixes.values.forEach { suffix ->
                         val storeName = "$name$suffix"
                         val store = environment.openStore(storeName, StoreConfig.USE_EXISTING, txn, false)
@@ -62,7 +63,15 @@ internal class XodusDataset private constructor(private val name: String, privat
 
     override fun addStatements(statements: Collection<Quad>) {
         WriteLock.lock.withLock {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            environment.executeInExclusiveTransaction { txn ->
+                statements.forEach { statement ->
+                    val graphId = fetchGraphId(statement.graph, txn)
+                    val subjectId = fetchSubjectId(statement.subject, txn)
+                    val predicateId = fetchPredicateId(statement.predicate, txn)
+                    val objectId = fetchObjectId(statement.`object`, txn)
+                    insertStatement(graphId, subjectId, predicateId, objectId, txn)
+                }
+            }
         }
     }
 
@@ -78,5 +87,25 @@ internal class XodusDataset private constructor(private val name: String, privat
         WriteLock.lock.withLock {
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
+    }
+
+    private fun fetchGraphId(graph: Graph, txn: Transaction): Long {
+        TODO()
+    }
+
+    private fun fetchSubjectId(subject: Subject, txn: Transaction): Long {
+        TODO()
+    }
+
+    private fun fetchPredicateId(predicate: Predicate, txn: Transaction): Long {
+        TODO()
+    }
+
+    private fun fetchObjectId(`object`: Object, txn: Transaction): Long {
+        TODO()
+    }
+
+    private fun insertStatement(graphId: Long, subjectId: Long, predicateId: Long, objectId: Long, txn: Transaction) {
+        TODO()
     }
 }
