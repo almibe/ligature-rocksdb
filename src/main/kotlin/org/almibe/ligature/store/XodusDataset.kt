@@ -7,7 +7,13 @@ package org.almibe.ligature.store
 import jetbrains.exodus.env.Environment
 import jetbrains.exodus.env.StoreConfig
 import org.almibe.ligature.*
+import java.util.concurrent.locks.ReentrantLock
 import java.util.stream.Stream
+import kotlin.concurrent.withLock
+
+internal object WriteLock {
+    val lock = ReentrantLock()
+}
 
 internal class XodusDataset private constructor(private val name: String, private val environment: Environment): Dataset {
     companion object {
@@ -28,7 +34,7 @@ internal class XodusDataset private constructor(private val name: String, privat
         )
 
         fun createOrOpen(name: String, environment: Environment): XodusDataset {
-            environment.executeInExclusiveTransaction { txn ->
+            environment.executeInTransaction { txn ->
                 suffixes.values.forEach {  suffix ->
                     environment.openStore("$name$suffix", StoreConfig.WITHOUT_DUPLICATES, txn)
                 }
@@ -37,9 +43,11 @@ internal class XodusDataset private constructor(private val name: String, privat
         }
 
         fun delete(name: String, environment: Environment) {
-            environment.executeInExclusiveTransaction {  txn ->
-                suffixes.values.forEach { suffix ->
-                    environment.removeStore("$name$suffix", txn)
+            WriteLock.lock.withLock {
+                environment.executeInTransaction {  txn ->
+                    suffixes.values.forEach { suffix ->
+                        environment.removeStore("$name$suffix", txn)
+                    }
                 }
             }
         }
@@ -66,7 +74,9 @@ internal class XodusDataset private constructor(private val name: String, privat
     override fun getDatasetName(): String = name
 
     override fun addStatements(statements: Collection<Quad>) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        WriteLock.lock.withLock {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
     }
 
     override fun executeSparql(sparql: String): Stream<List<SparqlResultField>> {
@@ -78,6 +88,8 @@ internal class XodusDataset private constructor(private val name: String, privat
     }
 
     override fun removeStatements(statements: Collection<Quad>) {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        WriteLock.lock.withLock {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
     }
 }
