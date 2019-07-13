@@ -18,6 +18,8 @@ internal object WriteLock {
 
 internal class XodusDataset private constructor(private val name: String,
                                                 private val environment: Environment): Dataset {
+    private val sparqlRunner = SparqlRunner(environment)
+
     companion object {
         val suffixes = mapOf(
             "cntr" to "#cntr",
@@ -65,10 +67,10 @@ internal class XodusDataset private constructor(private val name: String,
         WriteLock.lock.withLock {
             environment.executeInExclusiveTransaction { txn ->
                 statements.forEach { statement ->
-                    val graphId = fetchGraphId(statement.graph, txn)
-                    val subjectId = fetchSubjectId(statement.subject, txn)
-                    val predicateId = fetchPredicateId(statement.predicate, txn)
-                    val objectId = fetchObjectId(statement.`object`, txn)
+                    val graphId = fetchOrCreateGraphId(statement.graph, txn)
+                    val subjectId = fetchOrCreateSubjectId(statement.subject, txn)
+                    val predicateId = fetchOrCreatePredicateId(statement.predicate, txn)
+                    val objectId = fetchOrCreateObjectId(statement.`object`, txn)
                     insertStatement(graphId, subjectId, predicateId, objectId, txn)
                 }
             }
@@ -76,17 +78,43 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     override fun executeSparql(sparql: String): Stream<List<SparqlResultField>> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return sparqlRunner.executeSparql(sparql)
     }
 
     override fun findAll(subject: Subject?, predicate: Predicate?, `object`: Object?, graph: Graph?): Stream<Quad> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        return environment.computeInReadonlyTransaction {
+            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+        }
     }
 
     override fun removeStatements(statements: Collection<Quad>) {
         WriteLock.lock.withLock {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+            statements.forEach { statement ->
+                environment.executeInExclusiveTransaction { txn ->
+                    val graphId = fetchGraphId(statement.graph, txn)
+                    val subjectId = fetchSubjectId(statement.subject, txn)
+                    val predicateId = fetchPredicateId(statement.predicate, txn)
+                    val objectId = fetchObjectId(statement.`object`, txn)
+                    removeStatement(graphId, subjectId, predicateId, objectId, txn)
+                }
+            }
         }
+    }
+
+    private fun fetchOrCreateGraphId(graph: Graph, txn: Transaction): Long {
+        TODO()
+    }
+
+    private fun fetchOrCreateSubjectId(subject: Subject, txn: Transaction): Long {
+        TODO()
+    }
+
+    private fun fetchOrCreatePredicateId(predicate: Predicate, txn: Transaction): Long {
+        TODO()
+    }
+
+    private fun fetchOrCreateObjectId(`object`: Object, txn: Transaction): Long {
+        TODO()
     }
 
     private fun fetchGraphId(graph: Graph, txn: Transaction): Long {
@@ -107,5 +135,11 @@ internal class XodusDataset private constructor(private val name: String,
 
     private fun insertStatement(graphId: Long, subjectId: Long, predicateId: Long, objectId: Long, txn: Transaction) {
         TODO()
+    }
+
+    private fun removeStatement(graphId: Long?, subjectId: Long?, predicateId: Long?, objectId: Long?, txn: Transaction) {
+        if (graphId != null && subjectId != null && predicateId != null && objectId != null) {
+            TODO()
+        }
     }
 }
