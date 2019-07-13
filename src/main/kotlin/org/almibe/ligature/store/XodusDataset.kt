@@ -47,10 +47,10 @@ internal class XodusDataset private constructor(private val name: String, privat
             WriteLock.lock.withLock {
                 environment.executeInTransaction {  txn ->
                     suffixes.values.forEach { suffix ->
-                        try {
-                            environment.removeStore("$name$suffix", txn)
-                        } catch (ex: Exception) {
-                            //ignore
+                        val storeName = "$name$suffix"
+                        val store = environment.openStore(storeName, StoreConfig.USE_EXISTING, txn, false)
+                        if (store != null) {
+                            environment.removeStore(storeName, txn)
                         }
                     }
                 }
