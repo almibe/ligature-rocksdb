@@ -4,6 +4,7 @@
 
 package org.almibe.ligature.store
 
+import jetbrains.exodus.bindings.IntegerBinding
 import jetbrains.exodus.env.Environment
 import jetbrains.exodus.env.StoreConfig
 import jetbrains.exodus.env.Transaction
@@ -71,7 +72,7 @@ internal class XodusDataset private constructor(private val name: String,
                     val subjectId = fetchOrCreateSubjectId(statement.subject, txn)
                     val predicateId = fetchOrCreatePredicateId(statement.predicate, txn)
                     val objectId = fetchOrCreateObjectId(statement.`object`, txn)
-                    insertStatement(graphId, subjectId, predicateId, objectId, txn)
+                    addStatement(graphId, subjectId, predicateId, objectId, txn)
                 }
             }
         }
@@ -133,11 +134,49 @@ internal class XodusDataset private constructor(private val name: String,
         TODO()
     }
 
-    private fun insertStatement(graphId: Long, subjectId: Long, predicateId: Long, objectId: Long, txn: Transaction) {
-        TODO()
+    private fun addStatement(graphId: Long, subjectId: Long, predicateId: Long, objectId: Long, txn: Transaction) {
+        val spo = EncodedQuad(graphId, subjectId, predicateId, objectId)
+        val sop = EncodedQuad(graphId, subjectId, objectId, predicateId)
+        val pos = EncodedQuad(graphId, predicateId, objectId, subjectId)
+        val pso = EncodedQuad(graphId, predicateId, subjectId, objectId)
+        val osp = EncodedQuad(graphId, objectId, subjectId, predicateId)
+        val ops = EncodedQuad(graphId, objectId, predicateId, subjectId)
+
+        val spoStore = environment.openStore("$name${suffixes["spo"]}", StoreConfig.USE_EXISTING, txn)
+        val sopStore = environment.openStore("$name${suffixes["sop"]}", StoreConfig.USE_EXISTING, txn)
+        val posStore = environment.openStore("$name${suffixes["pos"]}", StoreConfig.USE_EXISTING, txn)
+        val psoStore = environment.openStore("$name${suffixes["pso"]}", StoreConfig.USE_EXISTING, txn)
+        val ospStore = environment.openStore("$name${suffixes["osp"]}", StoreConfig.USE_EXISTING, txn)
+        val opsStore = environment.openStore("$name${suffixes["ops"]}", StoreConfig.USE_EXISTING, txn)
+
+        spoStore.put(txn, spo.toByteIterable(), IntegerBinding.intToEntry(1))
+        sopStore.put(txn, sop.toByteIterable(), IntegerBinding.intToEntry(1))
+        posStore.put(txn, pos.toByteIterable(), IntegerBinding.intToEntry(1))
+        psoStore.put(txn, pso.toByteIterable(), IntegerBinding.intToEntry(1))
+        ospStore.put(txn, osp.toByteIterable(), IntegerBinding.intToEntry(1))
+        opsStore.put(txn, ops.toByteIterable(), IntegerBinding.intToEntry(1))
     }
 
     private fun removeStatement(graphId: Long, subjectId: Long, predicateId: Long, objectId: Long, txn: Transaction) {
-        TODO()
+        val spo = EncodedQuad(graphId, subjectId, predicateId, objectId)
+        val sop = EncodedQuad(graphId, subjectId, objectId, predicateId)
+        val pos = EncodedQuad(graphId, predicateId, objectId, subjectId)
+        val pso = EncodedQuad(graphId, predicateId, subjectId, objectId)
+        val osp = EncodedQuad(graphId, objectId, subjectId, predicateId)
+        val ops = EncodedQuad(graphId, objectId, predicateId, subjectId)
+
+        val spoStore = environment.openStore("$name${suffixes["spo"]}", StoreConfig.USE_EXISTING, txn)
+        val sopStore = environment.openStore("$name${suffixes["sop"]}", StoreConfig.USE_EXISTING, txn)
+        val posStore = environment.openStore("$name${suffixes["pos"]}", StoreConfig.USE_EXISTING, txn)
+        val psoStore = environment.openStore("$name${suffixes["pso"]}", StoreConfig.USE_EXISTING, txn)
+        val ospStore = environment.openStore("$name${suffixes["osp"]}", StoreConfig.USE_EXISTING, txn)
+        val opsStore = environment.openStore("$name${suffixes["ops"]}", StoreConfig.USE_EXISTING, txn)
+
+        spoStore.delete(txn, spo.toByteIterable())
+        sopStore.delete(txn, sop.toByteIterable())
+        posStore.delete(txn, pos.toByteIterable())
+        psoStore.delete(txn, pso.toByteIterable())
+        ospStore.delete(txn, osp.toByteIterable())
+        opsStore.delete(txn, ops.toByteIterable())
     }
 }
