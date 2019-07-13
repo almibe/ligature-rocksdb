@@ -89,12 +89,12 @@ internal class XodusDataset private constructor(private val name: String,
 
     override fun removeStatements(statements: Collection<Quad>) {
         WriteLock.lock.withLock {
-            statements.forEach { statement ->
-                environment.executeInExclusiveTransaction { txn ->
-                    val graphId = fetchGraphId(statement.graph, txn)
-                    val subjectId = fetchSubjectId(statement.subject, txn)
-                    val predicateId = fetchPredicateId(statement.predicate, txn)
-                    val objectId = fetchObjectId(statement.`object`, txn)
+            environment.executeInExclusiveTransaction { txn ->
+                for (statement in statements) {
+                    val graphId = fetchGraphId(statement.graph, txn) ?: continue
+                    val subjectId = fetchSubjectId(statement.subject, txn) ?: continue
+                    val predicateId = fetchPredicateId(statement.predicate, txn) ?: continue
+                    val objectId = fetchObjectId(statement.`object`, txn) ?: continue
                     removeStatement(graphId, subjectId, predicateId, objectId, txn)
                 }
             }
@@ -117,19 +117,19 @@ internal class XodusDataset private constructor(private val name: String,
         TODO()
     }
 
-    private fun fetchGraphId(graph: Graph, txn: Transaction): Long {
+    private fun fetchGraphId(graph: Graph, txn: Transaction): Long? {
         TODO()
     }
 
-    private fun fetchSubjectId(subject: Subject, txn: Transaction): Long {
+    private fun fetchSubjectId(subject: Subject, txn: Transaction): Long? {
         TODO()
     }
 
-    private fun fetchPredicateId(predicate: Predicate, txn: Transaction): Long {
+    private fun fetchPredicateId(predicate: Predicate, txn: Transaction): Long? {
         TODO()
     }
 
-    private fun fetchObjectId(`object`: Object, txn: Transaction): Long {
+    private fun fetchObjectId(`object`: Object, txn: Transaction): Long? {
         TODO()
     }
 
@@ -137,9 +137,7 @@ internal class XodusDataset private constructor(private val name: String,
         TODO()
     }
 
-    private fun removeStatement(graphId: Long?, subjectId: Long?, predicateId: Long?, objectId: Long?, txn: Transaction) {
-        if (graphId != null && subjectId != null && predicateId != null && objectId != null) {
-            TODO()
-        }
+    private fun removeStatement(graphId: Long, subjectId: Long, predicateId: Long, objectId: Long, txn: Transaction) {
+        TODO()
     }
 }
