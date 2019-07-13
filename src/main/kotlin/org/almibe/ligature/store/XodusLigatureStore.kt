@@ -17,7 +17,7 @@ object InMemoryStorage: StorageType()
 class XodusLigatureStore private constructor(private val environment: Environment): Store {
 
     companion object {
-        fun open(storageType: StorageType) {
+        fun open(storageType: StorageType): Store {
             when (storageType) {
                 is DirectoryStorage -> {
                     TODO()
