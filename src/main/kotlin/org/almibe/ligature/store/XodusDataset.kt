@@ -4,17 +4,36 @@
 
 package org.almibe.ligature.store
 
+import jetbrains.exodus.env.Environment
 import org.almibe.ligature.*
-import java.util.*
-import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.locks.ReentrantReadWriteLock
 import java.util.stream.Collectors
 import java.util.stream.Stream
 import kotlin.collections.HashSet
-import kotlin.concurrent.read
-import kotlin.concurrent.write
 
-internal class XodusDataset: Dataset {
+internal class XodusDataset private constructor(): Dataset {
+    private val cntrSuffix = "#cntr"
+    private val graphIdSuffix = "#gid"
+    private val idGraphSuffix = "#idg"
+    private val nodeIdSuffix = "#nid"
+    private val idNodeSuffix = "#idn"
+    private val literalIdSuffix = "#lid"
+    private val idLiteralSuffix = "#idl"
+    private val spoSuffix = "#spo"
+    private val sopSuffix = "#sop"
+    private val posSuffix = "#pos"
+    private val psoSuffix = "#pso"
+    private val ospSuffix = "#osp"
+    private val opsSuffix = "#ops"
+
+    companion object {
+        fun createOrOpen(name: String, environment: Environment): XodusDataset {
+            TODO()
+        }
+
+        fun delete(name: String, environment: Environment) {
+            TODO()
+        }
+    }
 
     private data class EncodedQuad(val graph: Long, val first: Long, val second: Long, val third: Long): Comparable<EncodedQuad> {
         override fun compareTo(other: EncodedQuad): Int {
@@ -34,44 +53,8 @@ internal class XodusDataset: Dataset {
         }
     }
 
-    private val cntr = AtomicLong() //counter used for generating IDs
-    private val graphs: BiMap<String, Long> = HashBiMap.create() //track named graphs
-    private val nodes: BiMap<String, Long> =  HashBiMap.create() //track blank nodes and IRIs "_:blankNode" "<http://IRI>"
-    private val literals: BiMap<Literal, Long> = HashBiMap.create() //track typed literals and lang literals
-    private val spo = TreeSet<EncodedQuad>()
-    private val sop = TreeSet<EncodedQuad>()
-    private val pos = TreeSet<EncodedQuad>()
-    private val pso = TreeSet<EncodedQuad>()
-    private val osp = TreeSet<EncodedQuad>()
-    private val ops = TreeSet<EncodedQuad>()
-    private val readWriteLock = ReentrantReadWriteLock()
-
-    override fun addStatements(statements: Collection<Quad>) {
-        readWriteLock.write {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-    }
-
-    override fun executeSparql(sparql: String): Stream<List<SparqlResultField>> {
-        readWriteLock.write { //TODO should be either a write or read depending on command type
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-    }
-
-    override fun findAll(subject: Subject?, predicate: Predicate?, `object`: Object?, graph: Graph?): Stream<Quad> {
-        readWriteLock.read {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-    }
-
     override fun getDatasetName(): String = name
 
-    override fun removeStatements(statements: Collection<Quad>) {
-        readWriteLock.write {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-        }
-    }
-
     override fun addStatements(statements: Collection<Quad>) {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
@@ -81,10 +64,6 @@ internal class XodusDataset: Dataset {
     }
 
     override fun findAll(subject: Subject?, predicate: Predicate?, `object`: Object?, graph: Graph?): Stream<Quad> {
-        TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-    }
-
-    override fun getDatasetName(): String {
         TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
     }
 
