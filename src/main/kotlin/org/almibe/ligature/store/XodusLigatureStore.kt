@@ -5,10 +5,16 @@
 package org.almibe.ligature.store
 
 import jetbrains.exodus.env.Environment
+import jetbrains.exodus.env.EnvironmentConfig
 import org.almibe.ligature.*
 import java.lang.RuntimeException
 import java.nio.file.Path
 import java.util.stream.Stream
+import jetbrains.exodus.io.inMemory.MemoryDataWriter
+import jetbrains.exodus.io.inMemory.MemoryDataReader
+import jetbrains.exodus.io.inMemory.Memory
+import jetbrains.exodus.log.LogConfig
+import jetbrains.exodus.env.Environments
 
 sealed class StorageType
 data class DirectoryStorage(val path: Path): StorageType()
@@ -18,14 +24,22 @@ class XodusLigatureStore private constructor(private val environment: Environmen
 
     companion object {
         fun open(storageType: StorageType): Store {
-            when (storageType) {
+            return when (storageType) {
                 is DirectoryStorage -> {
-                    TODO()
+                    XodusLigatureStore(Environments.newInstance(storageType.path.toFile()))
                 }
                 is InMemoryStorage -> {
-                    TODO()
+                    XodusLigatureStore(createInMemoryEnvironment())
                 }
             }
+        }
+
+        private fun createInMemoryEnvironment(): Environment {
+            val memory = Memory()
+            return Environments.newInstance(
+                    LogConfig.create(MemoryDataReader(memory), MemoryDataWriter(memory)),
+                    EnvironmentConfig().setGcUtilizationFromScratch(true)
+            )
         }
     }
 
