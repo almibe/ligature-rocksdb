@@ -22,6 +22,21 @@ class LigatureStoreSpec: StringSpec() {
             store.getDatasetNames().count() shouldBe 1
         }
 
+        "test deleting a dataset that doesn't exist" {
+            val store = XodusLigatureStore.open(InMemoryStorage)
+            store.deleteDataset("test")
+            store.getDatasetNames().count() shouldBe 0
+        }
+
+        "test creating and removing dataset" {
+            val store = XodusLigatureStore.open(InMemoryStorage)
+            val ds = store.getDataset("test")
+            ds.getDatasetName() shouldBe "test"
+            store.getDatasetNames().count() shouldBe 1
+            store.deleteDataset("test")
+            store.getDatasetNames().count() shouldBe 0
+        }
+
         "add statement and test it's existence" {
             val store = XodusLigatureStore.open(InMemoryStorage)
             val testDataSet = store.getDataset("test")
