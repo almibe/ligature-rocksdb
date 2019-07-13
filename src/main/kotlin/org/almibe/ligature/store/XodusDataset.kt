@@ -178,5 +178,11 @@ internal class XodusDataset private constructor(private val name: String,
         psoStore.delete(txn, pso.toByteIterable())
         ospStore.delete(txn, osp.toByteIterable())
         opsStore.delete(txn, ops.toByteIterable())
+
+        cleanUpReferences(graphId, subjectId, predicateId, objectId, txn)
+    }
+
+    private fun cleanUpReferences(graphId: Long, subjectId: Long, predicateId: Long, objectId: Long, txn: Transaction) {
+        TODO()
     }
 }
