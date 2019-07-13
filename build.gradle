@@ -16,7 +16,7 @@ test {
 }
 
 dependencies {
-    compile 'org.jetbrains.xodus:xodus-entity-store:1.3.91'
+    compile 'org.jetbrains.xodus:xodus-environment:1.3.91'
     compile 'org.almibe:ligature:0.1.0-SNAPSHOT'
     compile 'org.jetbrains.kotlin:kotlin-stdlib:1.3.40'
     testImplementation 'io.kotlintest:kotlintest-runner-junit5:3.3.2'
