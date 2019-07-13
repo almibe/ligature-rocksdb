@@ -5,6 +5,9 @@
 package org.almibe.ligature.store
 
 import jetbrains.exodus.ByteIterable
+import jetbrains.exodus.CompoundByteIterable
+import jetbrains.exodus.bindings.LongBinding.entryToLong
+import jetbrains.exodus.bindings.LongBinding.longToEntry
 
 internal data class EncodedQuad(val graph: Long, val first: Long, val second: Long, val third: Long): Comparable<EncodedQuad> {
     override fun compareTo(other: EncodedQuad): Int {
@@ -24,12 +27,23 @@ internal data class EncodedQuad(val graph: Long, val first: Long, val second: Lo
     }
 
     fun toByteIterable(): ByteIterable {
-        TODO()
+        return CompoundByteIterable(arrayOf(
+                longToEntry(graph),
+                longToEntry(first),
+                longToEntry(second),
+                longToEntry(third)
+        ))
     }
 
     companion object {
         fun fromByteIterable(byteIterable: ByteIterable): EncodedQuad {
-            TODO()
+            val offset = byteIterable.length/4
+            return EncodedQuad(
+                    entryToLong(byteIterable.subIterable(0, offset)),
+                    entryToLong(byteIterable.subIterable(offset, offset*2)),
+                    entryToLong(byteIterable.subIterable(offset*2, offset*3)),
+                    entryToLong(byteIterable.subIterable(offset*3, offset*4))
+            )
         }
     }
 }
