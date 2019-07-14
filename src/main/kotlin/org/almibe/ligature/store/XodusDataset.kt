@@ -4,7 +4,7 @@
 
 package org.almibe.ligature.store
 
-import jetbrains.exodus.bindings.IntegerBinding
+import jetbrains.exodus.bindings.BooleanBinding
 import jetbrains.exodus.env.Environment
 import jetbrains.exodus.env.StoreConfig
 import jetbrains.exodus.env.Transaction
@@ -82,7 +82,7 @@ internal class XodusDataset private constructor(private val name: String,
         return sparqlRunner.executeSparql(sparql)
     }
 
-    override fun findAll(subject: Subject?, predicate: Predicate?, `object`: Object?, graph: Graph?): Stream<Quad> {
+    override fun allStatements(): Stream<Quad> {
         return environment.computeInReadonlyTransaction {
             TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
         }
@@ -102,22 +102,6 @@ internal class XodusDataset private constructor(private val name: String,
         }
     }
 
-    private fun fetchOrCreateGraphId(graph: Graph, txn: Transaction): Long {
-        TODO()
-    }
-
-    private fun fetchOrCreateSubjectId(subject: Subject, txn: Transaction): Long {
-        TODO()
-    }
-
-    private fun fetchOrCreatePredicateId(predicate: Predicate, txn: Transaction): Long {
-        TODO()
-    }
-
-    private fun fetchOrCreateObjectId(`object`: Object, txn: Transaction): Long {
-        TODO()
-    }
-
     private fun fetchGraphId(graph: Graph, txn: Transaction): Long? {
         TODO()
     }
@@ -131,6 +115,22 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun fetchObjectId(`object`: Object, txn: Transaction): Long? {
+        TODO()
+    }
+
+    private fun fetchOrCreateGraphId(graph: Graph, txn: Transaction): Long {
+        TODO()
+    }
+
+    private fun fetchOrCreateSubjectId(subject: Subject, txn: Transaction): Long {
+        TODO()
+    }
+
+    private fun fetchOrCreatePredicateId(predicate: Predicate, txn: Transaction): Long {
+        TODO()
+    }
+
+    private fun fetchOrCreateObjectId(`object`: Object, txn: Transaction): Long {
         TODO()
     }
 
@@ -149,12 +149,12 @@ internal class XodusDataset private constructor(private val name: String,
         val ospStore = environment.openStore("$name${suffixes["osp"]}", StoreConfig.USE_EXISTING, txn)
         val opsStore = environment.openStore("$name${suffixes["ops"]}", StoreConfig.USE_EXISTING, txn)
 
-        spoStore.put(txn, spo.toByteIterable(), IntegerBinding.intToEntry(1))
-        sopStore.put(txn, sop.toByteIterable(), IntegerBinding.intToEntry(1))
-        posStore.put(txn, pos.toByteIterable(), IntegerBinding.intToEntry(1))
-        psoStore.put(txn, pso.toByteIterable(), IntegerBinding.intToEntry(1))
-        ospStore.put(txn, osp.toByteIterable(), IntegerBinding.intToEntry(1))
-        opsStore.put(txn, ops.toByteIterable(), IntegerBinding.intToEntry(1))
+        spoStore.put(txn, spo.toByteIterable(), BooleanBinding.booleanToEntry(true))
+        sopStore.put(txn, sop.toByteIterable(), BooleanBinding.booleanToEntry(true))
+        posStore.put(txn, pos.toByteIterable(), BooleanBinding.booleanToEntry(true))
+        psoStore.put(txn, pso.toByteIterable(), BooleanBinding.booleanToEntry(true))
+        ospStore.put(txn, osp.toByteIterable(), BooleanBinding.booleanToEntry(true))
+        opsStore.put(txn, ops.toByteIterable(), BooleanBinding.booleanToEntry(true))
     }
 
     private fun removeStatement(graphId: Long, subjectId: Long, predicateId: Long, objectId: Long, txn: Transaction) {
