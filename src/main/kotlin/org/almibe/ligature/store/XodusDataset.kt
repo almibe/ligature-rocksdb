@@ -82,9 +82,21 @@ internal class XodusDataset private constructor(private val name: String,
         return sparqlRunner.executeSparql(sparql)
     }
 
-    override fun allStatements(): Stream<Quad> {
-        return environment.computeInReadonlyTransaction {
-            TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+    override fun allStatements(): Stream<Quad> { //TODO rewrite to use streams better
+        return environment.computeInReadonlyTransaction { txn ->
+            val res = mutableListOf<Quad>()
+            val pso = environment.openStore("$name${suffixes["pso"]}", StoreConfig.USE_EXISTING, txn)
+            val cur = pso.openCursor(txn)
+
+            while(cur.next) {
+                val quad = EncodedQuad.fromByteIterable(cur.key)
+                val graph = graphFromId(quad.graph, txn)
+                val subject = subjectFromId(quad.first, txn)
+                val predicate = predicateFromId(quad.second, txn)
+                val `object` = objectFromId(quad.third, txn)
+                res.add(Quad(subject, predicate, `object`, graph))
+            }
+            res.stream()
         }
     }
 
@@ -131,6 +143,22 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun fetchOrCreateObjectId(`object`: Object, txn: Transaction): Long {
+        TODO()
+    }
+
+    private fun graphFromId(id: Long, txn: Transaction): Graph {
+        TODO()
+    }
+
+    private fun subjectFromId(id: Long, txn: Transaction): Subject {
+        TODO()
+    }
+
+    private fun predicateFromId(id: Long, txn: Transaction): Predicate {
+        TODO()
+    }
+
+    private fun objectFromId(id: Long, txn: Transaction): Object {
         TODO()
     }
 

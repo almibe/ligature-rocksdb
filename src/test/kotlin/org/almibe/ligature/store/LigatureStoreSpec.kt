@@ -44,9 +44,9 @@ class LigatureStoreSpec: StringSpec() {
                     IRI("http://localhost/people#name"),
                     TypedLiteral("Alex"))))
 
-            testDataSet.findAll().count() shouldBe 1
+            testDataSet.allStatements().count() shouldBe 1
 
-            listOf(testDataSet.findAll()).first() shouldBe Quad(IRI("http://localhost/people/7"),
+            listOf(testDataSet.allStatements()).first() shouldBe Quad(IRI("http://localhost/people/7"),
                     IRI("http://localhost/people#name"),
                     TypedLiteral("Alex"))
         }
@@ -62,9 +62,9 @@ class LigatureStoreSpec: StringSpec() {
                     IRI("http://localhost/people#name"),
                     TypedLiteral("Alex"))))
 
-            testDataSet.findAll().count() shouldBe 1
+            testDataSet.allStatements().count() shouldBe 1
 
-            listOf(testDataSet.findAll()).first() shouldBe Quad(IRI("http://localhost/people/7"),
+            listOf(testDataSet.allStatements()).first() shouldBe Quad(IRI("http://localhost/people/7"),
                     IRI("http://localhost/people#name"),
                     TypedLiteral("Alex"))
         }
