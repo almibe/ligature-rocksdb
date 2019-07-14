@@ -85,8 +85,8 @@ internal class XodusDataset private constructor(private val name: String,
     override fun allStatements(): Stream<Quad> { //TODO rewrite to use streams better
         return environment.computeInReadonlyTransaction { txn ->
             val res = mutableListOf<Quad>()
-            val pso = environment.openStore("$name${suffixes["pso"]}", StoreConfig.USE_EXISTING, txn)
-            val cur = pso.openCursor(txn)
+            val spo = environment.openStore("$name${suffixes["spo"]}", StoreConfig.USE_EXISTING, txn)
+            val cur = spo.openCursor(txn)
 
             while(cur.next) {
                 val quad = EncodedQuad.fromByteIterable(cur.key)
