@@ -5,6 +5,8 @@
 package org.almibe.ligature.store
 
 import jetbrains.exodus.bindings.BooleanBinding
+import jetbrains.exodus.bindings.LongBinding
+import jetbrains.exodus.bindings.StringBinding
 import jetbrains.exodus.env.Environment
 import jetbrains.exodus.env.StoreConfig
 import jetbrains.exodus.env.Transaction
@@ -115,7 +117,16 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun fetchGraphId(graph: Graph, txn: Transaction): Long? {
-        TODO()
+        val gid = environment.openStore("$name${suffixes["gid"]}", StoreConfig.USE_EXISTING, txn)
+        val res = when (graph) {
+            is DefaultGraph -> gid.get(txn, StringBinding.stringToEntry(""))
+            is NamedGraph -> gid.get(txn, StringBinding.stringToEntry("<${graph.iri.value}>"))
+        }
+        return if (res == null) {
+            res
+        } else {
+            LongBinding.entryToLong(res)
+        }
     }
 
     private fun fetchSubjectId(subject: Subject, txn: Transaction): Long? {
