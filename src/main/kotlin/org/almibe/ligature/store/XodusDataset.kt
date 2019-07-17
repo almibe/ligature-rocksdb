@@ -11,6 +11,7 @@ import jetbrains.exodus.env.Environment
 import jetbrains.exodus.env.StoreConfig
 import jetbrains.exodus.env.Transaction
 import org.almibe.ligature.*
+import java.lang.RuntimeException
 import java.util.concurrent.locks.ReentrantLock
 import java.util.stream.Stream
 import kotlin.concurrent.withLock
@@ -117,10 +118,10 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun fetchGraphId(graph: Graph, txn: Transaction): Long? {
-        val gid = environment.openStore("$name${suffixes["gid"]}", StoreConfig.USE_EXISTING, txn)
+        val store = environment.openStore("$name${suffixes["gid"]}", StoreConfig.USE_EXISTING, txn)
         val res = when (graph) {
-            is DefaultGraph -> gid.get(txn, StringBinding.stringToEntry(""))
-            is NamedGraph -> gid.get(txn, StringBinding.stringToEntry("<${graph.iri.value}>"))
+            is DefaultGraph -> store.get(txn, StringBinding.stringToEntry(""))
+            is NamedGraph -> store.get(txn, StringBinding.stringToEntry("<${graph.iri.value}>"))
         }
         return if (res == null) {
             res
@@ -130,15 +131,55 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun fetchSubjectId(subject: Subject, txn: Transaction): Long? {
-        TODO()
+        val store = environment.openStore("$name${suffixes["nodeId"]}", StoreConfig.USE_EXISTING, txn)
+        val res = when (subject) {
+            is IRI -> store.get(txn, StringBinding.stringToEntry("<${subject.value}>"))
+            is BlankNode -> store.get(txn, StringBinding.stringToEntry("_:${subject.label}"))
+            else -> throw RuntimeException("Unexpected Subject (only IRI and BlankNode allowed) $subject")
+        }
+        return if (res == null) {
+            res
+        } else {
+            LongBinding.entryToLong(res)
+        }
     }
 
     private fun fetchPredicateId(predicate: Predicate, txn: Transaction): Long? {
-        TODO()
+        val store = environment.openStore("$name${suffixes["nodeId"]}", StoreConfig.USE_EXISTING, txn)
+        val res = when (predicate) {
+            is IRI -> store.get(txn, StringBinding.stringToEntry("<${predicate.value}>"))
+            else -> throw RuntimeException("Unexpected Predicate (only IRI allowed) $predicate")
+        }
+        return if (res == null) {
+            res
+        } else {
+            LongBinding.entryToLong(res)
+        }
     }
 
     private fun fetchObjectId(`object`: Object, txn: Transaction): Long? {
-        TODO()
+        val res = when (`object`) {
+            is IRI -> {
+                val store = environment.openStore("$name${suffixes["nodeId"]}", StoreConfig.USE_EXISTING, txn)
+                store.get(txn, StringBinding.stringToEntry("<${`object`.value}>"))
+            }
+            is BlankNode -> {
+                val store = environment.openStore("$name${suffixes["nodeId"]}", StoreConfig.USE_EXISTING, txn)
+                store.get(txn, StringBinding.stringToEntry("_:${`object`.label}"))
+            }
+            is LangLiteral -> {
+                TODO()
+            }
+            is TypedLiteral -> {
+                TODO()
+            }
+            else -> throw RuntimeException("Unexpected Object (only IRI, BlankNode, or Literal allowed) $`object`")
+        }
+        return if (res == null) {
+            res
+        } else {
+            LongBinding.entryToLong(res)
+        }
     }
 
     private fun fetchOrCreateGraphId(graph: Graph, txn: Transaction): Long {
