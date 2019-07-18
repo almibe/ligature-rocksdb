@@ -189,7 +189,7 @@ internal class XodusDataset private constructor(private val name: String,
         return if (id != null) {
             id
         } else {
-            val newId = fetchNextId()
+            val newId = fetchNextId(txn)
             val graphName = when (graph) {
                 is DefaultGraph -> ""
                 is NamedGraph -> "<${graph.iri.value}>"
@@ -207,7 +207,7 @@ internal class XodusDataset private constructor(private val name: String,
         return if (id != null) {
             id
         } else {
-            val newId = fetchNextId()
+            val newId = fetchNextId(txn)
             val subjectName = when (subject) {
                 is IRI -> "<${subject.value}>"
                 is BlankNode -> "_:${subject.label}"
@@ -226,7 +226,7 @@ internal class XodusDataset private constructor(private val name: String,
         return if (id != null) {
             id
         } else {
-            val newId = fetchNextId()
+            val newId = fetchNextId(txn)
             val predicateName = when (predicate) {
                 is IRI -> "<${predicate.value}>"
                 else -> throw RuntimeException("Unexpected Predicate (only IRI allowed) $predicate")
@@ -244,7 +244,7 @@ internal class XodusDataset private constructor(private val name: String,
         return if (id != null) {
             id
         } else {
-            val newId = fetchNextId()
+            val newId = fetchNextId(txn)
             val objectName = when (`object`) {
                 is IRI -> "<${`object`.value}>"
                 is BlankNode -> "_:${`object`.label}"
@@ -269,20 +269,59 @@ internal class XodusDataset private constructor(private val name: String,
         }
     }
 
-    private fun fetchNextId(): Long {
-        TODO()
+    private fun fetchNextId(txn: Transaction): Long {
+        val cntr = environment.openStore("$name${suffixes["cntr"]}", StoreConfig.USE_EXISTING, txn)
+        val oldValue = cntr.get(txn, StringBinding.stringToEntry("cntr"))
+        return if (oldValue == null) {
+            val firstValue = 0L
+            cntr.put(txn, StringBinding.stringToEntry("cntr"), LongBinding.longToEntry(firstValue))
+            firstValue
+        } else {
+            val newValue = LongBinding.entryToLong(oldValue) + 1L
+            cntr.put(txn, StringBinding.stringToEntry("cntr"), LongBinding.longToEntry(newValue))
+            newValue
+        }
     }
 
     private fun graphFromId(id: Long, txn: Transaction): Graph {
-        TODO()
+        val idGraph = environment.openStore("$name${suffixes["idGraph"]}", StoreConfig.USE_EXISTING, txn)
+        val graph = idGraph.get(txn, LongBinding.longToEntry(id)) ?: throw RuntimeException("Could not find Graph with id = $id.")
+        val graphString = StringBinding.entryToString(graph)
+        return if (graphString == "") {
+            DefaultGraph
+        } else if (graphString.startsWith("<") && graphString.endsWith(">")) {
+            val graphIri = IRI(graphString.removePrefix("<").removeSuffix(">"))
+            NamedGraph(graphIri)
+        } else {
+            throw RuntimeException("Invalid Graph - $graphString")
+        }
     }
 
     private fun subjectFromId(id: Long, txn: Transaction): Subject {
-        TODO()
+        val idNode = environment.openStore("$name${suffixes["idNode"]}", StoreConfig.USE_EXISTING, txn)
+        val subject = idNode.get(txn, LongBinding.longToEntry(id)) ?: throw RuntimeException("Could not find Subject with id = $id.")
+        val subjectString = StringBinding.entryToString(subject)
+        return when {
+            subjectString.startsWith("<") && subjectString.endsWith(">") -> {
+                IRI(subjectString.removePrefix("<").removeSuffix(">"))
+            }
+            subjectString.startsWith("_:") -> {
+                BlankNode(subjectString.removePrefix("_:"))
+            }
+            else -> throw RuntimeException("Invalid Subject - $subjectString")
+        }
     }
 
     private fun predicateFromId(id: Long, txn: Transaction): Predicate {
-        TODO()
+        val idNode = environment.openStore("$name${suffixes["idNode"]}", StoreConfig.USE_EXISTING, txn)
+        val predicate = idNode.get(txn, LongBinding.longToEntry(id)) ?: throw RuntimeException("Could not find Predicate with id = $id.")
+        val predicateString = StringBinding.entryToString(predicate)
+        return when {
+            predicateString.startsWith("<") && predicateString.endsWith(">") -> {
+                IRI(predicateString.removePrefix("<").removeSuffix(">"))
+            }
+            else -> throw RuntimeException("Invalid Predicate - $predicateString")
+        }
     }
 
     private fun objectFromId(id: Long, txn: Transaction): Object {
