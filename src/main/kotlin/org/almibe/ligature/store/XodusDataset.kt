@@ -20,27 +20,29 @@ internal object WriteLock {
     val lock = ReentrantLock()
 }
 
+private enum class Suffixes(val value: String) {
+    Counter("#cnt"),
+    GraphId("#gid"),
+    IdGraph("#idg"),
+    NodeId("#nid"),
+    IdNode("#idn"),
+    LiteralId("#lid"),
+    IdLiteral("#idl"),
+    LiteralTypeId("#tid"),
+    IdLiteralType("#idt"),
+    SPO("#spo"),
+    SOP("#sop"),
+    POS("#pos"),
+    PSO("#pso"),
+    OSP("#osp"),
+    OPS("#ops")
+}
+
 internal class XodusDataset private constructor(private val name: String,
                                                 private val environment: Environment): Dataset {
     private val sparqlRunner = SparqlRunner(environment)
 
     companion object {
-        val suffixes = mapOf(
-            "cntr" to "#cntr",
-            "graphId" to "#gid",
-            "idGraph" to "#idg",
-            "nodeId" to "#nid",
-            "idNode" to "#idn",
-            "literalId" to "#lid",
-            "idLiteral" to "#idl",
-            "spo" to "#spo",
-            "sop" to "#sop",
-            "pos" to "#pos",
-            "pso" to "#pso",
-            "osp" to "#osp",
-            "ops" to "#ops"
-        )
-
         fun createOrOpen(name: String, environment: Environment): XodusDataset {
             environment.executeInTransaction { txn ->
                 suffixes.values.forEach {  suffix ->
