@@ -325,7 +325,36 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun objectFromId(id: Long, txn: Transaction): Object {
-        TODO()
+        val idNode = environment.openStore("$name${suffixes["idNode"]}", StoreConfig.USE_EXISTING, txn)
+        val nodeObject = idNode.get(txn, LongBinding.longToEntry(id))
+        if (nodeObject != null) {
+            val objectString = StringBinding.entryToString(nodeObject)
+            return when {
+                objectString.startsWith("<") && objectString.endsWith(">") -> {
+                    IRI(objectString.removePrefix("<").removeSuffix(">"))
+                }
+                objectString.startsWith("_:") -> {
+                    BlankNode(objectString.removePrefix("_:"))
+                }
+                else -> throw RuntimeException("Invalid Object - $objectString")
+            }
+        }
+
+        val idLiteral = environment.openStore("$name${suffixes["idLiteral"]}", StoreConfig.USE_EXISTING, txn)
+        val literalObject = idLiteral.get(txn, LongBinding.longToEntry(id))
+        if (literalObject != null) {
+            val objectString = StringBinding.entryToString(literalObject)
+            return when {
+                objectString.matches("".toRegex()) -> { //TODO
+                    TODO()
+                }
+                objectString.matches("".toRegex()) -> { //TODO
+                    TODO()
+                }
+                else -> throw RuntimeException("Invalid Object - $objectString")
+            }
+        }
+        throw RuntimeException("Could not find Object with id = $id")
     }
 
     private fun addStatement(graphId: Long, subjectId: Long, predicateId: Long, objectId: Long, txn: Transaction) {
