@@ -186,31 +186,56 @@ internal class XodusDataset private constructor(private val name: String,
 
     private fun fetchOrCreateGraphId(graph: Graph, txn: Transaction): Long {
         val id = fetchGraphId(graph, txn)
-        if (id != null) {
-            return id
+        return if (id != null) {
+            id
         } else {
             val newId = fetchNextId()
-            TODO()
+            val graphName = when (graph) {
+                is DefaultGraph -> ""
+                is NamedGraph -> "<${graph.iri.value}>"
+            }
+            val graphId = environment.openStore("$name${suffixes["graphId"]}", StoreConfig.USE_EXISTING, txn)
+            val idGraph = environment.openStore("$name${suffixes["idGraph"]}", StoreConfig.USE_EXISTING, txn)
+            graphId.put(txn, StringBinding.stringToEntry(graphName), LongBinding.longToEntry(newId))
+            idGraph.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(graphName))
+            newId
         }
     }
 
     private fun fetchOrCreateSubjectId(subject: Subject, txn: Transaction): Long {
         val id = fetchSubjectId(subject, txn)
-        if (id != null) {
-            return id
+        return if (id != null) {
+            id
         } else {
             val newId = fetchNextId()
-            TODO()
+            val subjectName = when (subject) {
+                is IRI -> "<${subject.value}>"
+                is BlankNode -> "_:${subject.label}"
+                else -> throw RuntimeException("Unexpected Subject (only IRI and BlankNode allowed) $subject")
+            }
+            val nodeId = environment.openStore("$name${suffixes["nodeId"]}", StoreConfig.USE_EXISTING, txn)
+            val idNode = environment.openStore("$name${suffixes["idNode"]}", StoreConfig.USE_EXISTING, txn)
+            nodeId.put(txn, StringBinding.stringToEntry(subjectName), LongBinding.longToEntry(newId))
+            idNode.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(subjectName))
+            newId
         }
     }
 
     private fun fetchOrCreatePredicateId(predicate: Predicate, txn: Transaction): Long {
         val id = fetchPredicateId(predicate, txn)
-        if (id != null) {
-            return id
+        return if (id != null) {
+            id
         } else {
             val newId = fetchNextId()
-            TODO()
+            val predicateName = when (predicate) {
+                is IRI -> "<${predicate.value}>"
+                else -> throw RuntimeException("Unexpected Predicate (only IRI allowed) $predicate")
+            }
+            val nodeId = environment.openStore("$name${suffixes["nodeId"]}", StoreConfig.USE_EXISTING, txn)
+            val idNode = environment.openStore("$name${suffixes["idNode"]}", StoreConfig.USE_EXISTING, txn)
+            nodeId.put(txn, StringBinding.stringToEntry(predicateName), LongBinding.longToEntry(newId))
+            idNode.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(predicateName))
+            newId
         }
     }
 
