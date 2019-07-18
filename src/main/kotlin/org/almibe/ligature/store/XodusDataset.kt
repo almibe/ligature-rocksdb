@@ -241,11 +241,31 @@ internal class XodusDataset private constructor(private val name: String,
 
     private fun fetchOrCreateObjectId(`object`: Object, txn: Transaction): Long {
         val id = fetchObjectId(`object`, txn)
-        if (id != null) {
-            return id
+        return if (id != null) {
+            id
         } else {
             val newId = fetchNextId()
-            TODO()
+            val objectName = when (`object`) {
+                is IRI -> "<${`object`.value}>"
+                is BlankNode -> "_:${`object`.label}"
+                is LangLiteral -> "${`object`.value}@${`object`.langTag}"
+                is TypedLiteral -> "${`object`.value}^^<${`object`.datatypeIRI.value}>"
+                else -> throw RuntimeException("Unexpected Object (only IRI, BlankNode, or Literal allowed) $`object`")
+            }
+            if (`object` is IRI || `object` is BlankNode) {
+                val nodeId = environment.openStore("$name${suffixes["nodeId"]}", StoreConfig.USE_EXISTING, txn)
+                val idNode = environment.openStore("$name${suffixes["idNode"]}", StoreConfig.USE_EXISTING, txn)
+                nodeId.put(txn, StringBinding.stringToEntry(objectName), LongBinding.longToEntry(newId))
+                idNode.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(objectName))
+            } else if (`object` is Literal) {
+                val literalId = environment.openStore("$name${suffixes["literalId"]}", StoreConfig.USE_EXISTING, txn)
+                val idLiteral = environment.openStore("$name${suffixes["idLiteral"]}", StoreConfig.USE_EXISTING, txn)
+                literalId.put(txn, StringBinding.stringToEntry(objectName), LongBinding.longToEntry(newId))
+                idLiteral.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(objectName))
+            } else {
+                throw RuntimeException("Unexpected Object (only IRI, BlankNode, or Literal allowed) $`object`")
+            }
+            newId
         }
     }
 
