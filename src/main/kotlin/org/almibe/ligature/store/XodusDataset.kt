@@ -168,10 +168,12 @@ internal class XodusDataset private constructor(private val name: String,
                 store.get(txn, StringBinding.stringToEntry("_:${`object`.label}"))
             }
             is LangLiteral -> {
-                TODO()
+                val store = environment.openStore("$name${suffixes["literalId"]}", StoreConfig.USE_EXISTING, txn)
+                store.get(txn, StringBinding.stringToEntry("${`object`.value}@${`object`.langTag}"))
             }
             is TypedLiteral -> {
-                TODO()
+                val store = environment.openStore("$name${suffixes["literalId"]}", StoreConfig.USE_EXISTING, txn)
+                store.get(txn, StringBinding.stringToEntry("${`object`.value}^^<${`object`.datatypeIRI.value}>"))
             }
             else -> throw RuntimeException("Unexpected Object (only IRI, BlankNode, or Literal allowed) $`object`")
         }
@@ -183,18 +185,46 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun fetchOrCreateGraphId(graph: Graph, txn: Transaction): Long {
-        TODO()
+        val id = fetchGraphId(graph, txn)
+        if (id != null) {
+            return id
+        } else {
+            val newId = fetchNextId()
+            TODO()
+        }
     }
 
     private fun fetchOrCreateSubjectId(subject: Subject, txn: Transaction): Long {
-        TODO()
+        val id = fetchSubjectId(subject, txn)
+        if (id != null) {
+            return id
+        } else {
+            val newId = fetchNextId()
+            TODO()
+        }
     }
 
     private fun fetchOrCreatePredicateId(predicate: Predicate, txn: Transaction): Long {
-        TODO()
+        val id = fetchPredicateId(predicate, txn)
+        if (id != null) {
+            return id
+        } else {
+            val newId = fetchNextId()
+            TODO()
+        }
     }
 
     private fun fetchOrCreateObjectId(`object`: Object, txn: Transaction): Long {
+        val id = fetchObjectId(`object`, txn)
+        if (id != null) {
+            return id
+        } else {
+            val newId = fetchNextId()
+            TODO()
+        }
+    }
+
+    private fun fetchNextId(): Long {
         TODO()
     }
 
