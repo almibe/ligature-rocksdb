@@ -181,14 +181,11 @@ internal class XodusDataset private constructor(private val name: String,
             id
         } else {
             val newId = fetchNextId(txn)
-            val graphName = when (graph) {
-                is DefaultGraph -> ""
-                is NamedGraph -> "<${graph.iri.value}>"
-            }
+            val encodedGraph = encodeGraph(graph)
             val graphId = environment.openStore(Suffixes.GraphId.storeName(name), StoreConfig.USE_EXISTING, txn)
             val idGraph = environment.openStore(Suffixes.IdGraph.storeName(name), StoreConfig.USE_EXISTING, txn)
-            graphId.put(txn, StringBinding.stringToEntry(graphName), LongBinding.longToEntry(newId))
-            idGraph.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(graphName))
+            graphId.put(txn, encodedGraph, LongBinding.longToEntry(newId))
+            idGraph.putRight(txn, LongBinding.longToEntry(newId), encodedGraph)
             newId
         }
     }
@@ -199,15 +196,11 @@ internal class XodusDataset private constructor(private val name: String,
             id
         } else {
             val newId = fetchNextId(txn)
-            val subjectName = when (subject) {
-                is IRI -> "<${subject.value}>"
-                is BlankNode -> "_:${subject.label}"
-                else -> throw RuntimeException("Unexpected Subject (only IRI and BlankNode allowed) $subject")
-            }
+            val encodedSubject = encodeSubject(subject)
             val nodeId = environment.openStore(Suffixes.NodeId.storeName(name), StoreConfig.USE_EXISTING, txn)
             val idNode = environment.openStore(Suffixes.IdNode.storeName(name), StoreConfig.USE_EXISTING, txn)
-            nodeId.put(txn, StringBinding.stringToEntry(subjectName), LongBinding.longToEntry(newId))
-            idNode.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(subjectName))
+            nodeId.put(txn, encodedSubject, LongBinding.longToEntry(newId))
+            idNode.putRight(txn, LongBinding.longToEntry(newId), encodedSubject)
             newId
         }
     }
@@ -218,14 +211,11 @@ internal class XodusDataset private constructor(private val name: String,
             id
         } else {
             val newId = fetchNextId(txn)
-            val predicateName = when (predicate) {
-                is IRI -> "<${predicate.value}>"
-                else -> throw RuntimeException("Unexpected Predicate (only IRI allowed) $predicate")
-            }
+            val encodedPredicate = encodePredicate(predicate)
             val nodeId = environment.openStore(Suffixes.NodeId.storeName(name), StoreConfig.USE_EXISTING, txn)
             val idNode = environment.openStore(Suffixes.IdNode.storeName(name), StoreConfig.USE_EXISTING, txn)
-            nodeId.put(txn, StringBinding.stringToEntry(predicateName), LongBinding.longToEntry(newId))
-            idNode.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(predicateName))
+            nodeId.put(txn, encodedPredicate, LongBinding.longToEntry(newId))
+            idNode.putRight(txn, LongBinding.longToEntry(newId), encodedPredicate)
             newId
         }
     }
@@ -236,23 +226,18 @@ internal class XodusDataset private constructor(private val name: String,
             id
         } else {
             val newId = fetchNextId(txn)
-            val objectName = when (`object`) {
-                is IRI -> "<${`object`.value}>"
-                is BlankNode -> "_:${`object`.label}"
-                is LangLiteral -> "${`object`.value}@${`object`.langTag}"
-                is TypedLiteral -> "${`object`.value}^^<${`object`.datatypeIRI.value}>"
-                else -> throw RuntimeException("Unexpected Object (only IRI, BlankNode, or Literal allowed) $`object`")
-            }
             if (`object` is IRI || `object` is BlankNode) {
+                val encodedObject = encodeSubject(`object` as Subject)
                 val nodeId = environment.openStore(Suffixes.NodeId.storeName(name), StoreConfig.USE_EXISTING, txn)
                 val idNode = environment.openStore(Suffixes.IdNode.storeName(name), StoreConfig.USE_EXISTING, txn)
-                nodeId.put(txn, StringBinding.stringToEntry(objectName), LongBinding.longToEntry(newId))
-                idNode.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(objectName))
+                nodeId.put(txn, encodedObject, LongBinding.longToEntry(newId))
+                idNode.putRight(txn, LongBinding.longToEntry(newId), encodedObject)
             } else if (`object` is Literal) {
+                val encodedLiteral = encodeLiteral(`object`)
                 val literalId = environment.openStore(Suffixes.LiteralId.storeName(name), StoreConfig.USE_EXISTING, txn)
                 val idLiteral = environment.openStore(Suffixes.IdLiteral.storeName(name), StoreConfig.USE_EXISTING, txn)
-                literalId.put(txn, StringBinding.stringToEntry(objectName), LongBinding.longToEntry(newId))
-                idLiteral.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(objectName))
+                literalId.put(txn, encodedLiteral, LongBinding.longToEntry(newId))
+                idLiteral.putRight(txn, LongBinding.longToEntry(newId), encodedLiteral)
             } else {
                 throw RuntimeException("Unexpected Object (only IRI, BlankNode, or Literal allowed) $`object`")
             }
@@ -278,41 +263,21 @@ internal class XodusDataset private constructor(private val name: String,
         val idGraph = environment.openStore(Suffixes.IdGraph.storeName(name), StoreConfig.USE_EXISTING, txn)
         val graph = idGraph.get(txn, LongBinding.longToEntry(id)) ?: throw RuntimeException("Could not find Graph with id = $id.")
         val graphString = StringBinding.entryToString(graph)
-        return if (graphString == "") {
-            DefaultGraph
-        } else if (graphString.startsWith("<") && graphString.endsWith(">")) {
-            val graphIri = IRI(graphString.removePrefix("<").removeSuffix(">"))
-            NamedGraph(graphIri)
-        } else {
-            throw RuntimeException("Invalid Graph - $graphString")
-        }
+        return decodeGraph(graphString)
     }
 
     private fun subjectFromId(id: Long, txn: Transaction): Subject {
         val idNode = environment.openStore(Suffixes.IdNode.storeName(name), StoreConfig.USE_EXISTING, txn)
         val subject = idNode.get(txn, LongBinding.longToEntry(id)) ?: throw RuntimeException("Could not find Subject with id = $id.")
         val subjectString = StringBinding.entryToString(subject)
-        return when {
-            subjectString.startsWith("<") && subjectString.endsWith(">") -> {
-                IRI(subjectString.removePrefix("<").removeSuffix(">"))
-            }
-            subjectString.startsWith("_:") -> {
-                BlankNode(subjectString.removePrefix("_:"))
-            }
-            else -> throw RuntimeException("Invalid Subject - $subjectString")
-        }
+        return decodeSubject(subjectString)
     }
 
     private fun predicateFromId(id: Long, txn: Transaction): Predicate {
         val idNode = environment.openStore(Suffixes.IdNode.storeName(name), StoreConfig.USE_EXISTING, txn)
         val predicate = idNode.get(txn, LongBinding.longToEntry(id)) ?: throw RuntimeException("Could not find Predicate with id = $id.")
         val predicateString = StringBinding.entryToString(predicate)
-        return when {
-            predicateString.startsWith("<") && predicateString.endsWith(">") -> {
-                IRI(predicateString.removePrefix("<").removeSuffix(">"))
-            }
-            else -> throw RuntimeException("Invalid Predicate - $predicateString")
-        }
+        return decodePredicate(predicateString)
     }
 
     private fun objectFromId(id: Long, txn: Transaction): Object {
@@ -320,30 +285,14 @@ internal class XodusDataset private constructor(private val name: String,
         val nodeObject = idNode.get(txn, LongBinding.longToEntry(id))
         if (nodeObject != null) {
             val objectString = StringBinding.entryToString(nodeObject)
-            return when {
-                objectString.startsWith("<") && objectString.endsWith(">") -> {
-                    IRI(objectString.removePrefix("<").removeSuffix(">"))
-                }
-                objectString.startsWith("_:") -> {
-                    BlankNode(objectString.removePrefix("_:"))
-                }
-                else -> throw RuntimeException("Invalid Object - $objectString")
-            }
+            return decodeSubject(objectString) as Object
         }
 
         val idLiteral = environment.openStore(Suffixes.IdLiteral.storeName(name), StoreConfig.USE_EXISTING, txn)
         val literalObject = idLiteral.get(txn, LongBinding.longToEntry(id))
         if (literalObject != null) {
             val objectString = StringBinding.entryToString(literalObject)
-            return when {
-                objectString.matches("".toRegex()) -> { //TODO
-                    TODO()
-                }
-                objectString.matches("".toRegex()) -> { //TODO
-                    TODO()
-                }
-                else -> throw RuntimeException("Invalid Object - $objectString")
-            }
+            return decodeLiteral(objectString)
         }
         throw RuntimeException("Could not find Object with id = $id")
     }

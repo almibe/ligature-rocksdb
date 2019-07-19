@@ -20,7 +20,7 @@ class XodusEncodingSpec: StringSpec() {
             TODO()
         }
 
-        "test object encoding/decoding" {
+        "test literal encoding/decoding" {
             TODO()
         }
     }

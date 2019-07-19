@@ -20,7 +20,7 @@ fun encodeSubject(subject: Subject): ByteIterable {
     return when (subject) {
         is IRI -> StringBinding.stringToEntry("<${subject.value}>")
         is BlankNode -> StringBinding.stringToEntry("_:${subject.label}")
-        else -> throw RuntimeException("Unexpected Subject (only IRI and BlankNode allowed) $subject")
+        else -> throw RuntimeException("Unexpected Node (only IRI and BlankNode allowed) $subject")
     }
 }
 
@@ -42,18 +42,46 @@ fun encodeLiteral(literal: Literal): ByteIterable {
     }
 }
 
-fun isGraph(graphString: String): Graph? {
-    TODO()
+fun decodeGraph(graphString: String): Graph {
+    return if (graphString == "") {
+        DefaultGraph
+    } else if (graphString.startsWith("<") && graphString.endsWith(">")) {
+        val graphIri = IRI(graphString.removePrefix("<").removeSuffix(">"))
+        NamedGraph(graphIri)
+    } else {
+        throw RuntimeException("Invalid Graph - $graphString")
+    }
 }
 
-fun isSubject(subjectString: String): Subject? {
-    TODO()
+fun decodeSubject(subjectString: String): Subject {
+    return when {
+        subjectString.startsWith("<") && subjectString.endsWith(">") -> {
+            IRI(subjectString.removePrefix("<").removeSuffix(">"))
+        }
+        subjectString.startsWith("_:") -> {
+            BlankNode(subjectString.removePrefix("_:"))
+        }
+        else -> throw RuntimeException("Invalid Node - $subjectString")
+    }
 }
 
-fun isPredicate(predicateString: String): Predicate? {
-    TODO()
+fun decodePredicate(predicateString: String): Predicate {
+    return when {
+        predicateString.startsWith("<") && predicateString.endsWith(">") -> {
+            IRI(predicateString.removePrefix("<").removeSuffix(">"))
+        }
+        else -> throw RuntimeException("Invalid Predicate - $predicateString")
+    }
 }
 
-fun isObject(objectString: String): Object? {
-    TODO()
+fun decodeLiteral(literalString: String): Literal {
+    return when {
+        literalString.matches("^.+@[a-zA-Z]+(\\-[a-zA-Z0-9]+)*]$".toRegex()) -> {
+            TODO()
+        }
+        literalString.matches("^.+\\^\\^[0-9]+$".toRegex()) -> {
+            TODO()
+        }
+        else -> throw RuntimeException("Invalid Literal - $literalString")
+    }
 }
