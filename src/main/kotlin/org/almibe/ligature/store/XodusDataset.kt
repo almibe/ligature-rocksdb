@@ -35,7 +35,11 @@ private enum class Suffixes(val value: String) {
     POS("#pos"),
     PSO("#pso"),
     OSP("#osp"),
-    OPS("#ops")
+    OPS("#ops");
+
+    fun storeName(name: String): String {
+        return "$name$value"
+    }
 }
 
 internal class XodusDataset private constructor(private val name: String,
@@ -45,8 +49,8 @@ internal class XodusDataset private constructor(private val name: String,
     companion object {
         fun createOrOpen(name: String, environment: Environment): XodusDataset {
             environment.executeInTransaction { txn ->
-                suffixes.values.forEach {  suffix ->
-                    environment.openStore("$name$suffix", StoreConfig.WITHOUT_DUPLICATES, txn)
+                Suffixes.values().forEach {  suffix ->
+                    environment.openStore(suffix.storeName(name), StoreConfig.WITHOUT_DUPLICATES, txn)
                 }
             }
             return XodusDataset(name, environment)
@@ -55,8 +59,8 @@ internal class XodusDataset private constructor(private val name: String,
         fun delete(name: String, environment: Environment) {
             WriteLock.lock.withLock {
                 environment.executeInExclusiveTransaction {  txn ->
-                    suffixes.values.forEach { suffix ->
-                        val storeName = "$name$suffix"
+                    Suffixes.values().forEach { suffix ->
+                        val storeName = suffix.storeName(name)
                         val store = environment.openStore(storeName, StoreConfig.USE_EXISTING, txn, false)
                         if (store != null) {
                             environment.removeStore(storeName, txn)
@@ -90,7 +94,7 @@ internal class XodusDataset private constructor(private val name: String,
     override fun allStatements(): Stream<Quad> { //TODO rewrite to use streams better
         return environment.computeInReadonlyTransaction { txn ->
             val res = mutableListOf<Quad>()
-            val spo = environment.openStore("$name${suffixes["spo"]}", StoreConfig.USE_EXISTING, txn)
+            val spo = environment.openStore(Suffixes.SPO.storeName(name), StoreConfig.USE_EXISTING, txn)
             val cur = spo.openCursor(txn)
 
             while(cur.next) {
@@ -120,7 +124,7 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun fetchGraphId(graph: Graph, txn: Transaction): Long? {
-        val store = environment.openStore("$name${suffixes["gid"]}", StoreConfig.USE_EXISTING, txn)
+        val store = environment.openStore(Suffixes.GraphId.storeName(name), StoreConfig.USE_EXISTING, txn)
         val res = when (graph) {
             is DefaultGraph -> store.get(txn, StringBinding.stringToEntry(""))
             is NamedGraph -> store.get(txn, StringBinding.stringToEntry("<${graph.iri.value}>"))
@@ -133,7 +137,7 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun fetchSubjectId(subject: Subject, txn: Transaction): Long? {
-        val store = environment.openStore("$name${suffixes["nodeId"]}", StoreConfig.USE_EXISTING, txn)
+        val store = environment.openStore(Suffixes.NodeId.storeName(name), StoreConfig.USE_EXISTING, txn)
         val res = when (subject) {
             is IRI -> store.get(txn, StringBinding.stringToEntry("<${subject.value}>"))
             is BlankNode -> store.get(txn, StringBinding.stringToEntry("_:${subject.label}"))
@@ -147,7 +151,7 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun fetchPredicateId(predicate: Predicate, txn: Transaction): Long? {
-        val store = environment.openStore("$name${suffixes["nodeId"]}", StoreConfig.USE_EXISTING, txn)
+        val store = environment.openStore(Suffixes.NodeId.storeName(name), StoreConfig.USE_EXISTING, txn)
         val res = when (predicate) {
             is IRI -> store.get(txn, StringBinding.stringToEntry("<${predicate.value}>"))
             else -> throw RuntimeException("Unexpected Predicate (only IRI allowed) $predicate")
@@ -162,19 +166,19 @@ internal class XodusDataset private constructor(private val name: String,
     private fun fetchObjectId(`object`: Object, txn: Transaction): Long? {
         val res = when (`object`) {
             is IRI -> {
-                val store = environment.openStore("$name${suffixes["nodeId"]}", StoreConfig.USE_EXISTING, txn)
+                val store = environment.openStore(Suffixes.NodeId.storeName(name), StoreConfig.USE_EXISTING, txn)
                 store.get(txn, StringBinding.stringToEntry("<${`object`.value}>"))
             }
             is BlankNode -> {
-                val store = environment.openStore("$name${suffixes["nodeId"]}", StoreConfig.USE_EXISTING, txn)
+                val store = environment.openStore(Suffixes.NodeId.storeName(name), StoreConfig.USE_EXISTING, txn)
                 store.get(txn, StringBinding.stringToEntry("_:${`object`.label}"))
             }
             is LangLiteral -> {
-                val store = environment.openStore("$name${suffixes["literalId"]}", StoreConfig.USE_EXISTING, txn)
+                val store = environment.openStore(Suffixes.LiteralId.storeName(name), StoreConfig.USE_EXISTING, txn)
                 store.get(txn, StringBinding.stringToEntry("${`object`.value}@${`object`.langTag}"))
             }
             is TypedLiteral -> {
-                val store = environment.openStore("$name${suffixes["literalId"]}", StoreConfig.USE_EXISTING, txn)
+                val store = environment.openStore(Suffixes.LiteralId.storeName(name), StoreConfig.USE_EXISTING, txn)
                 store.get(txn, StringBinding.stringToEntry("${`object`.value}^^<${`object`.datatypeIRI.value}>"))
             }
             else -> throw RuntimeException("Unexpected Object (only IRI, BlankNode, or Literal allowed) $`object`")
@@ -196,8 +200,8 @@ internal class XodusDataset private constructor(private val name: String,
                 is DefaultGraph -> ""
                 is NamedGraph -> "<${graph.iri.value}>"
             }
-            val graphId = environment.openStore("$name${suffixes["graphId"]}", StoreConfig.USE_EXISTING, txn)
-            val idGraph = environment.openStore("$name${suffixes["idGraph"]}", StoreConfig.USE_EXISTING, txn)
+            val graphId = environment.openStore(Suffixes.GraphId.storeName(name), StoreConfig.USE_EXISTING, txn)
+            val idGraph = environment.openStore(Suffixes.IdGraph.storeName(name), StoreConfig.USE_EXISTING, txn)
             graphId.put(txn, StringBinding.stringToEntry(graphName), LongBinding.longToEntry(newId))
             idGraph.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(graphName))
             newId
@@ -215,8 +219,8 @@ internal class XodusDataset private constructor(private val name: String,
                 is BlankNode -> "_:${subject.label}"
                 else -> throw RuntimeException("Unexpected Subject (only IRI and BlankNode allowed) $subject")
             }
-            val nodeId = environment.openStore("$name${suffixes["nodeId"]}", StoreConfig.USE_EXISTING, txn)
-            val idNode = environment.openStore("$name${suffixes["idNode"]}", StoreConfig.USE_EXISTING, txn)
+            val nodeId = environment.openStore(Suffixes.NodeId.storeName(name), StoreConfig.USE_EXISTING, txn)
+            val idNode = environment.openStore(Suffixes.IdNode.storeName(name), StoreConfig.USE_EXISTING, txn)
             nodeId.put(txn, StringBinding.stringToEntry(subjectName), LongBinding.longToEntry(newId))
             idNode.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(subjectName))
             newId
@@ -233,8 +237,8 @@ internal class XodusDataset private constructor(private val name: String,
                 is IRI -> "<${predicate.value}>"
                 else -> throw RuntimeException("Unexpected Predicate (only IRI allowed) $predicate")
             }
-            val nodeId = environment.openStore("$name${suffixes["nodeId"]}", StoreConfig.USE_EXISTING, txn)
-            val idNode = environment.openStore("$name${suffixes["idNode"]}", StoreConfig.USE_EXISTING, txn)
+            val nodeId = environment.openStore(Suffixes.NodeId.storeName(name), StoreConfig.USE_EXISTING, txn)
+            val idNode = environment.openStore(Suffixes.IdNode.storeName(name), StoreConfig.USE_EXISTING, txn)
             nodeId.put(txn, StringBinding.stringToEntry(predicateName), LongBinding.longToEntry(newId))
             idNode.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(predicateName))
             newId
@@ -255,13 +259,13 @@ internal class XodusDataset private constructor(private val name: String,
                 else -> throw RuntimeException("Unexpected Object (only IRI, BlankNode, or Literal allowed) $`object`")
             }
             if (`object` is IRI || `object` is BlankNode) {
-                val nodeId = environment.openStore("$name${suffixes["nodeId"]}", StoreConfig.USE_EXISTING, txn)
-                val idNode = environment.openStore("$name${suffixes["idNode"]}", StoreConfig.USE_EXISTING, txn)
+                val nodeId = environment.openStore(Suffixes.NodeId.storeName(name), StoreConfig.USE_EXISTING, txn)
+                val idNode = environment.openStore(Suffixes.IdNode.storeName(name), StoreConfig.USE_EXISTING, txn)
                 nodeId.put(txn, StringBinding.stringToEntry(objectName), LongBinding.longToEntry(newId))
                 idNode.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(objectName))
             } else if (`object` is Literal) {
-                val literalId = environment.openStore("$name${suffixes["literalId"]}", StoreConfig.USE_EXISTING, txn)
-                val idLiteral = environment.openStore("$name${suffixes["idLiteral"]}", StoreConfig.USE_EXISTING, txn)
+                val literalId = environment.openStore(Suffixes.LiteralId.storeName(name), StoreConfig.USE_EXISTING, txn)
+                val idLiteral = environment.openStore(Suffixes.IdLiteral.storeName(name), StoreConfig.USE_EXISTING, txn)
                 literalId.put(txn, StringBinding.stringToEntry(objectName), LongBinding.longToEntry(newId))
                 idLiteral.putRight(txn, LongBinding.longToEntry(newId), StringBinding.stringToEntry(objectName))
             } else {
@@ -272,7 +276,7 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun fetchNextId(txn: Transaction): Long {
-        val cntr = environment.openStore("$name${suffixes["cntr"]}", StoreConfig.USE_EXISTING, txn)
+        val cntr = environment.openStore(Suffixes.Counter.storeName(name), StoreConfig.USE_EXISTING, txn)
         val oldValue = cntr.get(txn, StringBinding.stringToEntry("cntr"))
         return if (oldValue == null) {
             val firstValue = 0L
@@ -286,7 +290,7 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun graphFromId(id: Long, txn: Transaction): Graph {
-        val idGraph = environment.openStore("$name${suffixes["idGraph"]}", StoreConfig.USE_EXISTING, txn)
+        val idGraph = environment.openStore(Suffixes.IdGraph.storeName(name), StoreConfig.USE_EXISTING, txn)
         val graph = idGraph.get(txn, LongBinding.longToEntry(id)) ?: throw RuntimeException("Could not find Graph with id = $id.")
         val graphString = StringBinding.entryToString(graph)
         return if (graphString == "") {
@@ -300,7 +304,7 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun subjectFromId(id: Long, txn: Transaction): Subject {
-        val idNode = environment.openStore("$name${suffixes["idNode"]}", StoreConfig.USE_EXISTING, txn)
+        val idNode = environment.openStore(Suffixes.IdNode.storeName(name), StoreConfig.USE_EXISTING, txn)
         val subject = idNode.get(txn, LongBinding.longToEntry(id)) ?: throw RuntimeException("Could not find Subject with id = $id.")
         val subjectString = StringBinding.entryToString(subject)
         return when {
@@ -315,7 +319,7 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun predicateFromId(id: Long, txn: Transaction): Predicate {
-        val idNode = environment.openStore("$name${suffixes["idNode"]}", StoreConfig.USE_EXISTING, txn)
+        val idNode = environment.openStore(Suffixes.IdNode.storeName(name), StoreConfig.USE_EXISTING, txn)
         val predicate = idNode.get(txn, LongBinding.longToEntry(id)) ?: throw RuntimeException("Could not find Predicate with id = $id.")
         val predicateString = StringBinding.entryToString(predicate)
         return when {
@@ -327,7 +331,7 @@ internal class XodusDataset private constructor(private val name: String,
     }
 
     private fun objectFromId(id: Long, txn: Transaction): Object {
-        val idNode = environment.openStore("$name${suffixes["idNode"]}", StoreConfig.USE_EXISTING, txn)
+        val idNode = environment.openStore(Suffixes.IdNode.storeName(name), StoreConfig.USE_EXISTING, txn)
         val nodeObject = idNode.get(txn, LongBinding.longToEntry(id))
         if (nodeObject != null) {
             val objectString = StringBinding.entryToString(nodeObject)
@@ -342,7 +346,7 @@ internal class XodusDataset private constructor(private val name: String,
             }
         }
 
-        val idLiteral = environment.openStore("$name${suffixes["idLiteral"]}", StoreConfig.USE_EXISTING, txn)
+        val idLiteral = environment.openStore(Suffixes.IdLiteral.storeName(name), StoreConfig.USE_EXISTING, txn)
         val literalObject = idLiteral.get(txn, LongBinding.longToEntry(id))
         if (literalObject != null) {
             val objectString = StringBinding.entryToString(literalObject)
@@ -367,12 +371,12 @@ internal class XodusDataset private constructor(private val name: String,
         val osp = EncodedQuad(graphId, objectId, subjectId, predicateId)
         val ops = EncodedQuad(graphId, objectId, predicateId, subjectId)
 
-        val spoStore = environment.openStore("$name${suffixes["spo"]}", StoreConfig.USE_EXISTING, txn)
-        val sopStore = environment.openStore("$name${suffixes["sop"]}", StoreConfig.USE_EXISTING, txn)
-        val posStore = environment.openStore("$name${suffixes["pos"]}", StoreConfig.USE_EXISTING, txn)
-        val psoStore = environment.openStore("$name${suffixes["pso"]}", StoreConfig.USE_EXISTING, txn)
-        val ospStore = environment.openStore("$name${suffixes["osp"]}", StoreConfig.USE_EXISTING, txn)
-        val opsStore = environment.openStore("$name${suffixes["ops"]}", StoreConfig.USE_EXISTING, txn)
+        val spoStore = environment.openStore(Suffixes.SPO.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val sopStore = environment.openStore(Suffixes.SOP.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val posStore = environment.openStore(Suffixes.POS.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val psoStore = environment.openStore(Suffixes.PSO.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val ospStore = environment.openStore(Suffixes.OSP.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val opsStore = environment.openStore(Suffixes.OPS.storeName(name), StoreConfig.USE_EXISTING, txn)
 
         spoStore.put(txn, spo.toByteIterable(), BooleanBinding.booleanToEntry(true))
         sopStore.put(txn, sop.toByteIterable(), BooleanBinding.booleanToEntry(true))
@@ -390,12 +394,12 @@ internal class XodusDataset private constructor(private val name: String,
         val osp = EncodedQuad(graphId, objectId, subjectId, predicateId)
         val ops = EncodedQuad(graphId, objectId, predicateId, subjectId)
 
-        val spoStore = environment.openStore("$name${suffixes["spo"]}", StoreConfig.USE_EXISTING, txn)
-        val sopStore = environment.openStore("$name${suffixes["sop"]}", StoreConfig.USE_EXISTING, txn)
-        val posStore = environment.openStore("$name${suffixes["pos"]}", StoreConfig.USE_EXISTING, txn)
-        val psoStore = environment.openStore("$name${suffixes["pso"]}", StoreConfig.USE_EXISTING, txn)
-        val ospStore = environment.openStore("$name${suffixes["osp"]}", StoreConfig.USE_EXISTING, txn)
-        val opsStore = environment.openStore("$name${suffixes["ops"]}", StoreConfig.USE_EXISTING, txn)
+        val spoStore = environment.openStore(Suffixes.SPO.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val sopStore = environment.openStore(Suffixes.SOP.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val posStore = environment.openStore(Suffixes.POS.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val psoStore = environment.openStore(Suffixes.PSO.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val ospStore = environment.openStore(Suffixes.OSP.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val opsStore = environment.openStore(Suffixes.OPS.storeName(name), StoreConfig.USE_EXISTING, txn)
 
         spoStore.delete(txn, spo.toByteIterable())
         sopStore.delete(txn, sop.toByteIterable())
