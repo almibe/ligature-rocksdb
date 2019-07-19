@@ -182,10 +182,11 @@ internal class XodusDataset private constructor(private val name: String,
                 store.get(txn, encodeLangLiteral(literal))
             }
             is TypedLiteral -> {
-                //check tid for literal's iri type
-                //if null return null
-                //else read id and call encodeTypedLiteral(literal, id)
-                TODO()
+                val store = environment.openStore(Suffixes.LiteralId.storeName(name), StoreConfig.USE_EXISTING, txn)
+                val tid = environment.openStore(Suffixes.LiteralTypeId.storeName(name), StoreConfig.USE_EXISTING, txn)
+                val id = tid.get(txn, StringBinding.stringToEntry(literal.datatypeIRI.value)) ?: return null
+                val longId = LongBinding.entryToLong(id)
+                store.get(txn, encodeTypedLiteral(literal, longId))
             }
         }
     }
@@ -264,11 +265,20 @@ internal class XodusDataset private constructor(private val name: String,
         return when (literal) {
             is LangLiteral -> encodeLangLiteral(literal)
             is TypedLiteral -> {
-                //check tid for existence of literals iri type
-                //if null create new entry in tid and idt
-                //else read id
-                //call encodeTypedLiteral(`object`, id)
-                TODO()
+                val encodedIRI = StringBinding.stringToEntry(literal.datatypeIRI.value)
+                val tid = environment.openStore(Suffixes.LiteralTypeId.storeName(name), StoreConfig.USE_EXISTING, txn)
+                val id = tid.get(txn, encodedIRI)
+                val longId = if (id == null) {
+                    val nextId = fetchNextId(txn)
+                    val encodedNextId = LongBinding.longToEntry(nextId)
+                    val idt = environment.openStore(Suffixes.IdLiteralType.storeName(name), StoreConfig.USE_EXISTING, txn)
+                    tid.put(txn, encodedIRI, encodedNextId)
+                    idt.putRight(txn, encodedNextId, encodedIRI)
+                    nextId
+                } else {
+                    LongBinding.entryToLong(id)
+                }
+                encodeTypedLiteral(literal, longId)
             }
         }
     }
@@ -330,12 +340,24 @@ internal class XodusDataset private constructor(private val name: String,
         if (res != null) {
             return res
         }
-        //extract id from literalString
-        //if id is null throw RuntimeException("Invalid Literal - $literalString")
-        //look up iri type in idt
-        //if null throw RuntimeException("Could not find Type with id = $id
-        //else build iri and return decodeTypedLiteral(literalString, iri)
-        TODO()
+        val values = literalString.split("^^")
+        if (values.size > 1) {
+            val lastId = values.last().toLongOrNull()
+            if (lastId != null) {
+                val idt = environment.openStore(Suffixes.IdLiteralType.storeName(name), StoreConfig.USE_EXISTING, txn)
+                val typeIri = idt.get(txn, LongBinding.longToEntry(lastId))
+                if (typeIri != null) {
+                    val iri = IRI(StringBinding.entryToString(typeIri))
+                    val typeRes = decodeTypedLiteral(literalString, iri)
+                    if (typeRes != null) {
+                        return typeRes
+                    }
+                } else {
+                    throw RuntimeException("Could not find Type with id = $lastId")
+                }
+            }
+        }
+        throw RuntimeException("Invalid Literal - $literalString")
     }
 
     private fun addStatement(graphId: Long, subjectId: Long, predicateId: Long, objectId: Long, txn: Transaction) {
