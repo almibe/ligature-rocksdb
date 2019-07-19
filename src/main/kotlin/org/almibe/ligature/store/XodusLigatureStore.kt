@@ -15,6 +15,7 @@ import jetbrains.exodus.io.inMemory.MemoryDataReader
 import jetbrains.exodus.io.inMemory.Memory
 import jetbrains.exodus.log.LogConfig
 import jetbrains.exodus.env.Environments
+import jetbrains.exodus.env.TransactionalComputable
 
 sealed class StorageType
 data class DirectoryStorage(val path: Path): StorageType()
@@ -74,5 +75,9 @@ class XodusLigatureStore private constructor(private val environment: Environmen
         } else {
             throw RuntimeException("Store is closed.")
         }
+    }
+
+    fun <T>computeInReadonlyTransaction(computable: TransactionalComputable<T>): T {
+        return environment.computeInReadonlyTransaction(computable)
     }
 }
