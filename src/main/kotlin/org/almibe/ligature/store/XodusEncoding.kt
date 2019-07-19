@@ -5,25 +5,41 @@
 package org.almibe.ligature.store
 
 import jetbrains.exodus.ByteIterable
-import org.almibe.ligature.Graph
-import org.almibe.ligature.Object
-import org.almibe.ligature.Predicate
-import org.almibe.ligature.Subject
+import jetbrains.exodus.bindings.StringBinding
+import org.almibe.ligature.*
+import java.lang.RuntimeException
 
 fun encodeGraph(graph: Graph): ByteIterable {
-    TODO()
+    return when (graph) {
+        is DefaultGraph -> StringBinding.stringToEntry("")
+        is NamedGraph -> StringBinding.stringToEntry("<${graph.iri.value}>")
+    }
 }
 
 fun encodeSubject(subject: Subject): ByteIterable {
-    TODO()
+    return when (subject) {
+        is IRI -> StringBinding.stringToEntry("<${subject.value}>")
+        is BlankNode -> StringBinding.stringToEntry("_:${subject.label}")
+        else -> throw RuntimeException("Unexpected Subject (only IRI and BlankNode allowed) $subject")
+    }
 }
 
 fun encodePredicate(predicate: Predicate): ByteIterable {
-    TODO()
+    return when (predicate) {
+        is IRI -> StringBinding.stringToEntry("<${predicate.value}>")
+        else -> throw RuntimeException("Unexpected Predicate (only IRI allowed) $predicate")
+    }
 }
 
-fun encodeObject(`object`: Object): ByteIterable {
-    TODO()
+fun encodeLiteral(literal: Literal): ByteIterable {
+    return when (literal) {
+        is LangLiteral -> {
+            StringBinding.stringToEntry("${literal.value}@${literal.langTag}")
+        }
+        is TypedLiteral -> {
+            StringBinding.stringToEntry("${literal.value}^^<${literal.datatypeIRI.value}>")
+        }
+    }
 }
 
 fun isGraph(graphString: String): Graph? {

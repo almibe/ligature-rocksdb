@@ -125,10 +125,8 @@ internal class XodusDataset private constructor(private val name: String,
 
     private fun fetchGraphId(graph: Graph, txn: Transaction): Long? {
         val store = environment.openStore(Suffixes.GraphId.storeName(name), StoreConfig.USE_EXISTING, txn)
-        val res = when (graph) {
-            is DefaultGraph -> store.get(txn, StringBinding.stringToEntry(""))
-            is NamedGraph -> store.get(txn, StringBinding.stringToEntry("<${graph.iri.value}>"))
-        }
+        val encodedGraph = encodeGraph(graph)
+        val res = store.get(txn, encodedGraph)
         return if (res == null) {
             res
         } else {
@@ -138,11 +136,8 @@ internal class XodusDataset private constructor(private val name: String,
 
     private fun fetchSubjectId(subject: Subject, txn: Transaction): Long? {
         val store = environment.openStore(Suffixes.NodeId.storeName(name), StoreConfig.USE_EXISTING, txn)
-        val res = when (subject) {
-            is IRI -> store.get(txn, StringBinding.stringToEntry("<${subject.value}>"))
-            is BlankNode -> store.get(txn, StringBinding.stringToEntry("_:${subject.label}"))
-            else -> throw RuntimeException("Unexpected Subject (only IRI and BlankNode allowed) $subject")
-        }
+        val encodedSubject = encodeSubject(subject)
+        val res = store.get(txn, encodedSubject)
         return if (res == null) {
             res
         } else {
@@ -152,10 +147,8 @@ internal class XodusDataset private constructor(private val name: String,
 
     private fun fetchPredicateId(predicate: Predicate, txn: Transaction): Long? {
         val store = environment.openStore(Suffixes.NodeId.storeName(name), StoreConfig.USE_EXISTING, txn)
-        val res = when (predicate) {
-            is IRI -> store.get(txn, StringBinding.stringToEntry("<${predicate.value}>"))
-            else -> throw RuntimeException("Unexpected Predicate (only IRI allowed) $predicate")
-        }
+        val encodedPredicate = encodePredicate(predicate)
+        val res = store.get(txn, encodedPredicate)
         return if (res == null) {
             res
         } else {
@@ -165,21 +158,13 @@ internal class XodusDataset private constructor(private val name: String,
 
     private fun fetchObjectId(`object`: Object, txn: Transaction): Long? {
         val res = when (`object`) {
-            is IRI -> {
+            is IRI, is BlankNode -> {
                 val store = environment.openStore(Suffixes.NodeId.storeName(name), StoreConfig.USE_EXISTING, txn)
-                store.get(txn, StringBinding.stringToEntry("<${`object`.value}>"))
+                store.get(txn, encodeSubject(`object` as Subject))
             }
-            is BlankNode -> {
-                val store = environment.openStore(Suffixes.NodeId.storeName(name), StoreConfig.USE_EXISTING, txn)
-                store.get(txn, StringBinding.stringToEntry("_:${`object`.label}"))
-            }
-            is LangLiteral -> {
+            is Literal -> {
                 val store = environment.openStore(Suffixes.LiteralId.storeName(name), StoreConfig.USE_EXISTING, txn)
-                store.get(txn, StringBinding.stringToEntry("${`object`.value}@${`object`.langTag}"))
-            }
-            is TypedLiteral -> {
-                val store = environment.openStore(Suffixes.LiteralId.storeName(name), StoreConfig.USE_EXISTING, txn)
-                store.get(txn, StringBinding.stringToEntry("${`object`.value}^^<${`object`.datatypeIRI.value}>"))
+                store.get(txn, encodeLiteral(`object`))
             }
             else -> throw RuntimeException("Unexpected Object (only IRI, BlankNode, or Literal allowed) $`object`")
         }
