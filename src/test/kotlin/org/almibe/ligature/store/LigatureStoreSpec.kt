@@ -7,6 +7,9 @@ package org.almibe.ligature.store
 import io.kotlintest.shouldBe
 import io.kotlintest.specs.StringSpec
 import org.almibe.ligature.*
+import java.util.stream.Collectors
+import kotlin.streams.toList
+
 
 class LigatureStoreSpec: StringSpec() {
     init {
@@ -46,7 +49,7 @@ class LigatureStoreSpec: StringSpec() {
 
             testDataSet.allStatements().count() shouldBe 1
 
-            listOf(testDataSet.allStatements()).first() shouldBe Quad(IRI("http://localhost/people/7"),
+            testDataSet.allStatements().toList().first() shouldBe Quad(IRI("http://localhost/people/7"),
                     IRI("http://localhost/people#name"),
                     TypedLiteral("Alex"))
         }
@@ -64,7 +67,7 @@ class LigatureStoreSpec: StringSpec() {
 
             testDataSet.allStatements().count() shouldBe 1
 
-            listOf(testDataSet.allStatements()).first() shouldBe Quad(IRI("http://localhost/people/7"),
+            testDataSet.allStatements().toList().first() shouldBe Quad(IRI("http://localhost/people/7"),
                     IRI("http://localhost/people#name"),
                     TypedLiteral("Alex"))
         }
@@ -84,15 +87,14 @@ class LigatureStoreSpec: StringSpec() {
 
             testDataSet.allStatements().count() shouldBe 2
 
-            listOf(testDataSet.allStatements()) shouldBe listOf(Quad(IRI("http://localhost/people/7"),
+            testDataSet.allStatements().toList() shouldBe listOf(Quad(IRI("http://localhost/people/7"),
                     IRI("http://localhost/people#name"),
-                    TypedLiteral("Alex")),
+                    TypedLiteral("Alex"),
+                    NamedGraph(IRI("http://hello"))),
 
                     Quad(IRI("http://localhost/people/7"),
                             IRI("http://localhost/people#name"),
-                            TypedLiteral("Alex"),
-                            NamedGraph(IRI("http://hello")))
-                    )
+                            TypedLiteral("Alex")))
         }
 
 
