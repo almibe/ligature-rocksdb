@@ -56,9 +56,7 @@ class XodusEncodingSpec: StringSpec() {
 
             langLiteral shouldBe decodeLangLiteral(StringBinding.entryToString(encodeLangLiteral(langLiteral)))
             langLiteral2 shouldBe decodeLangLiteral(StringBinding.entryToString(encodeLangLiteral(langLiteral2)))
-            shouldThrow<RuntimeException> {
-                decodeLangLiteral(StringBinding.entryToString(encodeLangLiteral(exception)))
-            }
+            decodeLangLiteral(StringBinding.entryToString(encodeLangLiteral(exception))) shouldBe null
         }
 
         "test typed literal encoding/decoding" {

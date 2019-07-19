@@ -72,9 +72,12 @@ fun decodePredicate(predicateString: String): Predicate {
 }
 
 fun decodeLangLiteral(literalString: String): LangLiteral? {
+    val regex = "^(.+)@([a-zA-Z]+(\\-[a-zA-Z0-9]+)*)$".toRegex()
     return when {
-        literalString.matches("^.+@[a-zA-Z]+(\\-[a-zA-Z0-9]+)*]$".toRegex()) -> {
-            TODO()
+        literalString.matches(regex) -> {
+            val res = regex.find(literalString)
+            if (res == null || res.groupValues.count() < 3) return null
+            return LangLiteral(res.groupValues[1], res.groupValues[2])
         }
         else -> null
     }
