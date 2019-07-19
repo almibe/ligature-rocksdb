@@ -78,6 +78,10 @@ class XodusLigatureStore private constructor(private val environment: Environmen
     }
 
     fun <T>computeInReadonlyTransaction(computable: TransactionalComputable<T>): T {
-        return environment.computeInReadonlyTransaction(computable)
+        return if (environment.isOpen) {
+            environment.computeInReadonlyTransaction(computable)
+        } else {
+            throw RuntimeException("Store is closed.")
+        }
     }
 }
