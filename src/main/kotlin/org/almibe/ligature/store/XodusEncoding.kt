@@ -84,9 +84,12 @@ fun decodeLangLiteral(literalString: String): LangLiteral? {
 }
 
 fun decodeTypedLiteral(literalString: String, typeIri: IRI): TypedLiteral? {
+    val regex = "^(.+)\\^\\^[0-9]+$".toRegex()
     return when {
-        literalString.matches("^.+\\^\\^[0-9]+$".toRegex()) -> {
-            TODO()
+        literalString.matches(regex) -> {
+            val res = regex.find(literalString)
+            if (res == null || res.groupValues.count() < 2) return null
+            return TypedLiteral(res.groupValues[1], typeIri)
         }
         else -> null
     }
