@@ -49,22 +49,30 @@ class XodusEncodingSpec: StringSpec() {
             }
         }
 
-        "test literal encoding/decoding" {
+        "test lang literal encoding/decoding" {
             val langLiteral = LangLiteral("test", "en")
             val langLiteral2 = LangLiteral("test test@", "en-0a9")
             val exception = LangLiteral("test test", "56")
 
+            langLiteral shouldBe decodeLangLiteral(StringBinding.entryToString(encodeLangLiteral(langLiteral)))
+            langLiteral2 shouldBe decodeLangLiteral(StringBinding.entryToString(encodeLangLiteral(langLiteral2)))
+            shouldThrow<RuntimeException> {
+                decodeLangLiteral(StringBinding.entryToString(encodeLangLiteral(exception)))
+            }
+        }
+
+        "test typed literal encoding/decoding" {
             val typedLiteral = TypedLiteral("5", IRI("http://test"))
             val typedLiteral2 = TypedLiteral("5 ex^^ re^^", IRI("http://test"))
 
-            langLiteral shouldBe decodeLiteral(StringBinding.entryToString(encodeLiteral(langLiteral)))
-            langLiteral2 shouldBe decodeLiteral(StringBinding.entryToString(encodeLiteral(langLiteral2)))
-            shouldThrow<RuntimeException> {
-                decodeLiteral(StringBinding.entryToString(encodeLiteral(exception)))
-            }
-
-            typedLiteral shouldBe decodeLiteral(StringBinding.entryToString(encodeLiteral(typedLiteral)))
-            typedLiteral2 shouldBe decodeLiteral(StringBinding.entryToString(encodeLiteral(typedLiteral2)))
+            typedLiteral shouldBe
+                    decodeTypedLiteral(
+                            StringBinding.entryToString(
+                                    encodeTypedLiteral(typedLiteral, 5)), IRI("http://test"))
+            typedLiteral2 shouldBe
+                    decodeTypedLiteral(
+                            StringBinding.entryToString(
+                                    encodeTypedLiteral(typedLiteral2, 5)), IRI("http://test"))
         }
     }
 }

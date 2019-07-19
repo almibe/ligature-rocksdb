@@ -31,15 +31,12 @@ fun encodePredicate(predicate: Predicate): ByteIterable {
     }
 }
 
-fun encodeLiteral(literal: Literal): ByteIterable {
-    return when (literal) {
-        is LangLiteral -> {
-            StringBinding.stringToEntry("${literal.value}@${literal.langTag}")
-        }
-        is TypedLiteral -> {
-            StringBinding.stringToEntry("${literal.value}^^<${literal.datatypeIRI.value}>")
-        }
-    }
+fun encodeLangLiteral(literal: LangLiteral): ByteIterable {
+    return StringBinding.stringToEntry("${literal.value}@${literal.langTag}")
+}
+
+fun encodeTypedLiteral(literal: TypedLiteral, id: Long): ByteIterable {
+    return StringBinding.stringToEntry("${literal.value}^^$id")
 }
 
 fun decodeGraph(graphString: String): Graph {
@@ -74,14 +71,20 @@ fun decodePredicate(predicateString: String): Predicate {
     }
 }
 
-fun decodeLiteral(literalString: String): Literal {
+fun decodeLangLiteral(literalString: String): LangLiteral? {
     return when {
         literalString.matches("^.+@[a-zA-Z]+(\\-[a-zA-Z0-9]+)*]$".toRegex()) -> {
             TODO()
         }
+        else -> null
+    }
+}
+
+fun decodeTypedLiteral(literalString: String, typeIri: IRI): TypedLiteral? {
+    return when {
         literalString.matches("^.+\\^\\^[0-9]+$".toRegex()) -> {
             TODO()
         }
-        else -> throw RuntimeException("Invalid Literal - $literalString")
+        else -> null
     }
 }

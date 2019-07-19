@@ -4,6 +4,7 @@
 
 package org.almibe.ligature.store
 
+import jetbrains.exodus.ByteIterable
 import jetbrains.exodus.bindings.BooleanBinding
 import jetbrains.exodus.bindings.LongBinding
 import jetbrains.exodus.bindings.StringBinding
@@ -163,8 +164,7 @@ internal class XodusDataset private constructor(private val name: String,
                 store.get(txn, encodeSubject(`object` as Subject))
             }
             is Literal -> {
-                val store = environment.openStore(Suffixes.LiteralId.storeName(name), StoreConfig.USE_EXISTING, txn)
-                store.get(txn, encodeLiteral(`object`))
+                fetchEncodedLiteral(`object`, txn)
             }
             else -> throw RuntimeException("Unexpected Object (only IRI, BlankNode, or Literal allowed) $`object`")
         }
@@ -172,6 +172,21 @@ internal class XodusDataset private constructor(private val name: String,
             res
         } else {
             LongBinding.entryToLong(res)
+        }
+    }
+
+    private fun fetchEncodedLiteral(literal: Literal, txn: Transaction): ByteIterable? {
+        return when (literal) {
+            is LangLiteral -> {
+                val store = environment.openStore(Suffixes.LiteralId.storeName(name), StoreConfig.USE_EXISTING, txn)
+                store.get(txn, encodeLangLiteral(literal))
+            }
+            is TypedLiteral -> {
+                //check tid for literal's iri type
+                //if null return null
+                //else read id and call encodeTypedLiteral(literal, id)
+                TODO()
+            }
         }
     }
 
@@ -233,7 +248,7 @@ internal class XodusDataset private constructor(private val name: String,
                 nodeId.put(txn, encodedObject, LongBinding.longToEntry(newId))
                 idNode.putRight(txn, LongBinding.longToEntry(newId), encodedObject)
             } else if (`object` is Literal) {
-                val encodedLiteral = encodeLiteral(`object`)
+                val encodedLiteral = createEncodedLiteral(`object`, txn)
                 val literalId = environment.openStore(Suffixes.LiteralId.storeName(name), StoreConfig.USE_EXISTING, txn)
                 val idLiteral = environment.openStore(Suffixes.IdLiteral.storeName(name), StoreConfig.USE_EXISTING, txn)
                 literalId.put(txn, encodedLiteral, LongBinding.longToEntry(newId))
@@ -242,6 +257,19 @@ internal class XodusDataset private constructor(private val name: String,
                 throw RuntimeException("Unexpected Object (only IRI, BlankNode, or Literal allowed) $`object`")
             }
             newId
+        }
+    }
+
+    private fun createEncodedLiteral(literal: Literal, txn: Transaction): ByteIterable {
+        return when (literal) {
+            is LangLiteral -> encodeLangLiteral(literal)
+            is TypedLiteral -> {
+                //check tid for existence of literals iri type
+                //if null create new entry in tid and idt
+                //else read id
+                //call encodeTypedLiteral(`object`, id)
+                TODO()
+            }
         }
     }
 
@@ -292,9 +320,22 @@ internal class XodusDataset private constructor(private val name: String,
         val literalObject = idLiteral.get(txn, LongBinding.longToEntry(id))
         if (literalObject != null) {
             val objectString = StringBinding.entryToString(literalObject)
-            return decodeLiteral(objectString)
+            return handleDecodeLiteral(objectString, txn)
         }
         throw RuntimeException("Could not find Object with id = $id")
+    }
+
+    private fun handleDecodeLiteral(literalString: String, txn: Transaction): Literal {
+        val res = decodeLangLiteral(literalString)
+        if (res != null) {
+            return res
+        }
+        //extract id from literalString
+        //if id is null throw RuntimeException("Invalid Literal - $literalString")
+        //look up iri type in idt
+        //if null throw RuntimeException("Could not find Type with id = $id
+        //else build iri and return decodeTypedLiteral(literalString, iri)
+        TODO()
     }
 
     private fun addStatement(graphId: Long, subjectId: Long, predicateId: Long, objectId: Long, txn: Transaction) {
