@@ -70,6 +70,32 @@ class LigatureStoreSpec: StringSpec() {
         }
 
 
+        "add a statement twice in two different graphs and test existence" {
+            val store = XodusLigatureStore.open(InMemoryStorage)
+            val testDataSet = store.getDataset("test")
+            testDataSet.addStatements(listOf(Quad(IRI("http://localhost/people/7"),
+                    IRI("http://localhost/people#name"),
+                    TypedLiteral("Alex"),
+                    NamedGraph(IRI("http://hello")))))
+
+            testDataSet.addStatements(listOf(Quad(IRI("http://localhost/people/7"),
+                    IRI("http://localhost/people#name"),
+                    TypedLiteral("Alex"))))
+
+            testDataSet.allStatements().count() shouldBe 2
+
+            listOf(testDataSet.allStatements()) shouldBe listOf(Quad(IRI("http://localhost/people/7"),
+                    IRI("http://localhost/people#name"),
+                    TypedLiteral("Alex")),
+
+                    Quad(IRI("http://localhost/people/7"),
+                            IRI("http://localhost/people#name"),
+                            TypedLiteral("Alex"),
+                            NamedGraph(IRI("http://hello")))
+                    )
+        }
+
+
 //        def "check saving a simple triple made of three IRIs"() {
 //            when:
 //            store.addStatement(new IRI("http://example.org/#spiderman"),
