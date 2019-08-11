@@ -9,9 +9,9 @@ import jetbrains.exodus.CompoundByteIterable
 import jetbrains.exodus.bindings.LongBinding.entryToLong
 import jetbrains.exodus.bindings.LongBinding.longToEntry
 
-internal data class EncodedQuad(val graph: Long, val first: Long, val second: Long, val third: Long): Comparable<EncodedQuad> {
+internal data class EncodedQuad(val first: Long, val second: Long, val third: Long, val fourth: Long): Comparable<EncodedQuad> {
     override fun compareTo(other: EncodedQuad): Int {
-        val result0 = graph.compareTo(other.graph)
+        val result0 = fourth.compareTo(other.fourth)
         if (result0 != 0) {
             return result0
         }
@@ -28,7 +28,7 @@ internal data class EncodedQuad(val graph: Long, val first: Long, val second: Lo
 
     fun toByteIterable(): ByteIterable {
         return CompoundByteIterable(arrayOf(
-                longToEntry(graph),
+                longToEntry(fourth),
                 longToEntry(first),
                 longToEntry(second),
                 longToEntry(third)
