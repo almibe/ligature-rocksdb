@@ -11,27 +11,27 @@ import jetbrains.exodus.bindings.LongBinding.longToEntry
 
 internal data class EncodedQuad(val first: Long, val second: Long, val third: Long, val fourth: Long): Comparable<EncodedQuad> {
     override fun compareTo(other: EncodedQuad): Int {
-        val result0 = fourth.compareTo(other.fourth)
+        val result0 = first.compareTo(other.first)
         if (result0 != 0) {
             return result0
         }
-        val result1 = first.compareTo(other.first)
+        val result1 = second.compareTo(other.second)
         if (result1 != 0) {
             return result1
         }
-        val result2 = second.compareTo(other.second)
+        val result2 = third.compareTo(other.third)
         if (result2 != 0) {
             return result2
         }
-        return third.compareTo(other.third)
+        return fourth.compareTo(other.fourth)
     }
 
     fun toByteIterable(): ByteIterable {
         return CompoundByteIterable(arrayOf(
-                longToEntry(fourth),
                 longToEntry(first),
                 longToEntry(second),
-                longToEntry(third)
+                longToEntry(third),
+                longToEntry(fourth)
         ))
     }
 
