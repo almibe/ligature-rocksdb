@@ -6,10 +6,10 @@ package org.almibe.ligature.store
 
 import jetbrains.exodus.ByteIterable
 import jetbrains.exodus.CompoundByteIterable
-import jetbrains.exodus.bindings.LongBinding.entryToLong
-import jetbrains.exodus.bindings.LongBinding.longToEntry
+import jetbrains.exodus.bindings.IntegerBinding.entryToInt
+import jetbrains.exodus.bindings.IntegerBinding.intToEntry
 
-internal data class EncodedQuad(val first: Long, val second: Long, val third: Long, val fourth: Long): Comparable<EncodedQuad> {
+internal data class EncodedQuad(val first: Int, val second: Int, val third: Int, val fourth: Int): Comparable<EncodedQuad> {
     override fun compareTo(other: EncodedQuad): Int {
         val result0 = first.compareTo(other.first)
         if (result0 != 0) {
@@ -28,10 +28,10 @@ internal data class EncodedQuad(val first: Long, val second: Long, val third: Lo
 
     fun toByteIterable(): ByteIterable {
         return CompoundByteIterable(arrayOf(
-                longToEntry(first),
-                longToEntry(second),
-                longToEntry(third),
-                longToEntry(fourth)
+                intToEntry(first),
+                intToEntry(second),
+                intToEntry(third),
+                intToEntry(fourth)
         ))
     }
 
@@ -39,10 +39,10 @@ internal data class EncodedQuad(val first: Long, val second: Long, val third: Lo
         fun fromByteIterable(byteIterable: ByteIterable): EncodedQuad {
             val offset = byteIterable.length/4
             return EncodedQuad(
-                    entryToLong(byteIterable.subIterable(0, offset)),
-                    entryToLong(byteIterable.subIterable(offset, offset*2)),
-                    entryToLong(byteIterable.subIterable(offset*2, offset*3)),
-                    entryToLong(byteIterable.subIterable(offset*3, offset*4))
+                    entryToInt(byteIterable.subIterable(0, offset)),
+                    entryToInt(byteIterable.subIterable(offset, offset*2)),
+                    entryToInt(byteIterable.subIterable(offset*2, offset*3)),
+                    entryToInt(byteIterable.subIterable(offset*3, offset*4))
             )
         }
     }
