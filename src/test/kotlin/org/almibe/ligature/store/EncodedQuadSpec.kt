@@ -19,7 +19,7 @@ class EncodedQuadSpec: StringSpec() {
 
         "test random quads" {
             for (i in 0..100) {
-                val encodedQuad = EncodedQuad(Random.nextLong(), Random.nextLong(), Random.nextLong(), Random.nextLong())
+                val encodedQuad = EncodedQuad(Random.nextInt(), Random.nextInt(), Random.nextInt(), Random.nextInt())
                 val byteIterable = encodedQuad.toByteIterable()
                 val encodedQuad2 = EncodedQuad.fromByteIterable(byteIterable)
                 encodedQuad shouldBe encodedQuad2
