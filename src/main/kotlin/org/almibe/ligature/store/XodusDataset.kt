@@ -29,14 +29,13 @@ private enum class Suffixes(val value: String) {
     IdNode("#idn"),
     LiteralId("#lid"),
     IdLiteral("#idl"),
-    LiteralTypeId("#tid"),
-    IdLiteralType("#idt"),
-    SPO("#spo"),
-    SOP("#sop"),
-    POS("#pos"),
-    PSO("#pso"),
-    OSP("#osp"),
-    OPS("#ops");
+    EAVG("#eavg"),
+    EVAG("#evag"),
+    AVEG("#aveg"),
+    AEVG("#aevg"),
+    VEAG("#veag"),
+    VAEG("#vaeg"),
+    GEAV("#geav");
 
     fun storeName(name: String): String {
         return "$name$value"
@@ -45,7 +44,6 @@ private enum class Suffixes(val value: String) {
 
 internal class XodusDataset private constructor(private val name: String,
                                                 private val environment: Environment): Dataset {
-    private val sparqlRunner = SparqlRunner(environment)
 
     companion object {
         fun createOrOpen(name: String, environment: Environment): XodusDataset {
@@ -74,7 +72,7 @@ internal class XodusDataset private constructor(private val name: String,
 
     override fun getDatasetName(): String = name
 
-    override fun addStatements(statements: Collection<Quad>) {
+    override fun addStatements(statements: Collection<Statement>) {
         WriteLock.lock.withLock {
             environment.executeInExclusiveTransaction { txn ->
                 statements.forEach { statement ->
@@ -88,29 +86,25 @@ internal class XodusDataset private constructor(private val name: String,
         }
     }
 
-    override fun executeSparql(sparql: String): Stream<List<SparqlResultField>> {
-        return sparqlRunner.executeSparql(sparql)
-    }
-
-    override fun allStatements(): Stream<Quad> { //TODO rewrite to use streams better
+    override fun allStatements(): Stream<Statement> { //TODO rewrite to use streams better
         return environment.computeInReadonlyTransaction { txn ->
-            val res = mutableListOf<Quad>()
-            val spo = environment.openStore(Suffixes.SPO.storeName(name), StoreConfig.USE_EXISTING, txn)
+            val res = mutableListOf<Statement>()
+            val spo = environment.openStore(Suffixes.EAVG.storeName(name), StoreConfig.USE_EXISTING, txn)
             val cur = spo.openCursor(txn)
 
             while(cur.next) {
                 val quad = EncodedQuad.fromByteIterable(cur.key)
-                val graph = graphFromId(quad.graph, txn)
+                val graph = graphFromId(quad.fourth, txn)
                 val subject = subjectFromId(quad.first, txn)
                 val predicate = predicateFromId(quad.second, txn)
                 val `object` = objectFromId(quad.third, txn)
-                res.add(Quad(subject, predicate, `object`, graph))
+                res.add(Statement(subject, predicate, `object`, graph))
             }
             res.stream()
         }
     }
 
-    override fun removeStatements(statements: Collection<Quad>) {
+    override fun removeStatements(statements: Collection<Statement>) {
         WriteLock.lock.withLock {
             environment.executeInExclusiveTransaction { txn ->
                 for (statement in statements) {
@@ -368,12 +362,12 @@ internal class XodusDataset private constructor(private val name: String,
         val osp = EncodedQuad(graphId, objectId, subjectId, predicateId)
         val ops = EncodedQuad(graphId, objectId, predicateId, subjectId)
 
-        val spoStore = environment.openStore(Suffixes.SPO.storeName(name), StoreConfig.USE_EXISTING, txn)
-        val sopStore = environment.openStore(Suffixes.SOP.storeName(name), StoreConfig.USE_EXISTING, txn)
-        val posStore = environment.openStore(Suffixes.POS.storeName(name), StoreConfig.USE_EXISTING, txn)
-        val psoStore = environment.openStore(Suffixes.PSO.storeName(name), StoreConfig.USE_EXISTING, txn)
-        val ospStore = environment.openStore(Suffixes.OSP.storeName(name), StoreConfig.USE_EXISTING, txn)
-        val opsStore = environment.openStore(Suffixes.OPS.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val spoStore = environment.openStore(Suffixes.EAVG.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val sopStore = environment.openStore(Suffixes.EVAG.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val posStore = environment.openStore(Suffixes.AVEG.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val psoStore = environment.openStore(Suffixes.AEVG.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val ospStore = environment.openStore(Suffixes.VEAG.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val opsStore = environment.openStore(Suffixes.VAEG.storeName(name), StoreConfig.USE_EXISTING, txn)
 
         spoStore.put(txn, spo.toByteIterable(), BooleanBinding.booleanToEntry(true))
         sopStore.put(txn, sop.toByteIterable(), BooleanBinding.booleanToEntry(true))
@@ -391,12 +385,12 @@ internal class XodusDataset private constructor(private val name: String,
         val osp = EncodedQuad(graphId, objectId, subjectId, predicateId)
         val ops = EncodedQuad(graphId, objectId, predicateId, subjectId)
 
-        val spoStore = environment.openStore(Suffixes.SPO.storeName(name), StoreConfig.USE_EXISTING, txn)
-        val sopStore = environment.openStore(Suffixes.SOP.storeName(name), StoreConfig.USE_EXISTING, txn)
-        val posStore = environment.openStore(Suffixes.POS.storeName(name), StoreConfig.USE_EXISTING, txn)
-        val psoStore = environment.openStore(Suffixes.PSO.storeName(name), StoreConfig.USE_EXISTING, txn)
-        val ospStore = environment.openStore(Suffixes.OSP.storeName(name), StoreConfig.USE_EXISTING, txn)
-        val opsStore = environment.openStore(Suffixes.OPS.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val spoStore = environment.openStore(Suffixes.EAVG.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val sopStore = environment.openStore(Suffixes.EVAG.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val posStore = environment.openStore(Suffixes.AVEG.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val psoStore = environment.openStore(Suffixes.AEVG.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val ospStore = environment.openStore(Suffixes.VEAG.storeName(name), StoreConfig.USE_EXISTING, txn)
+        val opsStore = environment.openStore(Suffixes.VAEG.storeName(name), StoreConfig.USE_EXISTING, txn)
 
         spoStore.delete(txn, spo.toByteIterable())
         sopStore.delete(txn, sop.toByteIterable())
