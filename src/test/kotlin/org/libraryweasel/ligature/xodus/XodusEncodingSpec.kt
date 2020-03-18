@@ -8,7 +8,6 @@ import io.kotlintest.shouldBe
 import io.kotlintest.shouldThrow
 import io.kotlintest.specs.StringSpec
 import jetbrains.exodus.bindings.StringBinding
-import org.almibe.ligature.*
 import java.lang.RuntimeException
 
 class XodusEncodingSpec: StringSpec() {

@@ -10,7 +10,6 @@ import org.almibe.ligature.*
 import java.util.stream.Collectors
 import kotlin.streams.toList
 
-
 class LigatureStoreSpec: StringSpec() {
     init {
         "store should start with no datasets" {

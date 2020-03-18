@@ -6,7 +6,6 @@ package org.almibe.ligature.store
 
 import jetbrains.exodus.ByteIterable
 import jetbrains.exodus.bindings.StringBinding
-import org.almibe.ligature.*
 import java.lang.RuntimeException
 
 fun encodeGraph(graph: Graph): ByteIterable {

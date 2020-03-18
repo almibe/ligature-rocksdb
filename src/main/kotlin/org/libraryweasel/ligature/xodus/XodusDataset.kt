@@ -11,7 +11,6 @@ import jetbrains.exodus.bindings.StringBinding
 import jetbrains.exodus.env.Environment
 import jetbrains.exodus.env.StoreConfig
 import jetbrains.exodus.env.Transaction
-import org.almibe.ligature.*
 import java.lang.RuntimeException
 import java.util.concurrent.locks.ReentrantLock
 import java.util.stream.Stream

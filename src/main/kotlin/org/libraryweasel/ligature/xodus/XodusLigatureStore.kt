@@ -6,7 +6,6 @@ package org.almibe.ligature.store
 
 import jetbrains.exodus.env.Environment
 import jetbrains.exodus.env.EnvironmentConfig
-import org.almibe.ligature.*
 import java.lang.RuntimeException
 import java.nio.file.Path
 import java.util.stream.Stream
@@ -16,15 +15,17 @@ import jetbrains.exodus.io.inMemory.Memory
 import jetbrains.exodus.log.LogConfig
 import jetbrains.exodus.env.Environments
 import jetbrains.exodus.env.TransactionalComputable
+import org.libraryweasel.ligature.Entity
+import org.libraryweasel.ligature.LigatureCollection
+import org.libraryweasel.ligature.LigatureStore
 
 sealed class StorageType
 data class DirectoryStorage(val path: Path): StorageType()
 object InMemoryStorage: StorageType()
 
-class XodusLigatureStore private constructor(private val environment: Environment): Store {
-
+class XodusLigatureStore private constructor(private val environment: Environment): LigatureStore {
     companion object {
-        fun open(storageType: StorageType): Store {
+        fun open(storageType: StorageType): LigatureStore {
             return when (storageType) {
                 is DirectoryStorage -> {
                     XodusLigatureStore(Environments.newInstance(storageType.path.toFile()))
@@ -48,7 +49,7 @@ class XodusLigatureStore private constructor(private val environment: Environmen
         environment.close()
     }
 
-    override fun deleteDataset(name: String) {
+    override fun deleteCollection(name: Entity) {
         if (environment.isOpen) {
             XodusDataset.delete(name, environment)
         } else {
@@ -56,7 +57,7 @@ class XodusLigatureStore private constructor(private val environment: Environmen
         }
     }
 
-    override fun getDataset(name: String): Dataset {
+    override fun collection(name: String): LigatureCollection {
         return if (environment.isOpen) {
             XodusDataset.createOrOpen(name, environment)
         } else {
