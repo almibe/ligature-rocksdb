@@ -8,13 +8,13 @@ import jetbrains.exodus.env.Environment
 import jetbrains.exodus.env.EnvironmentConfig
 import java.lang.RuntimeException
 import java.nio.file.Path
-import java.util.stream.Stream
 import jetbrains.exodus.io.inMemory.MemoryDataWriter
 import jetbrains.exodus.io.inMemory.MemoryDataReader
 import jetbrains.exodus.io.inMemory.Memory
 import jetbrains.exodus.log.LogConfig
 import jetbrains.exodus.env.Environments
 import jetbrains.exodus.env.TransactionalComputable
+import kotlinx.coroutines.flow.Flow
 import org.libraryweasel.ligature.Entity
 import org.libraryweasel.ligature.LigatureCollection
 import org.libraryweasel.ligature.LigatureStore
@@ -49,6 +49,14 @@ class XodusLigatureStore private constructor(private val environment: Environmen
         environment.close()
     }
 
+    override fun collection(collectionName: Entity): LigatureCollection {
+        TODO("Not yet implemented")
+    }
+
+    override fun createCollection(collectionName: Entity): LigatureCollection {
+        TODO("Not yet implemented")
+    }
+
     override fun deleteCollection(name: Entity) {
         if (environment.isOpen) {
             XodusDataset.delete(name, environment)
@@ -65,7 +73,7 @@ class XodusLigatureStore private constructor(private val environment: Environmen
         }
     }
 
-    override fun getDatasetNames(): Stream<String> {
+    override fun allCollections(): Flow<Entity> {
         return if (environment.isOpen) {
             val names = environment.computeInReadonlyTransaction {
                 environment.getAllStoreNames(it)
