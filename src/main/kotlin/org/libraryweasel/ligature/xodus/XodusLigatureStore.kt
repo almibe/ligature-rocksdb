@@ -6,18 +6,15 @@ package org.libraryweasel.ligature.xodus
 
 import jetbrains.exodus.env.Environment
 import jetbrains.exodus.env.EnvironmentConfig
-import java.lang.RuntimeException
 import java.nio.file.Path
 import jetbrains.exodus.io.inMemory.MemoryDataWriter
 import jetbrains.exodus.io.inMemory.MemoryDataReader
 import jetbrains.exodus.io.inMemory.Memory
 import jetbrains.exodus.log.LogConfig
 import jetbrains.exodus.env.Environments
-import jetbrains.exodus.env.TransactionalComputable
-import kotlinx.coroutines.flow.Flow
-import org.libraryweasel.ligature.Entity
-import org.libraryweasel.ligature.LigatureCollection
 import org.libraryweasel.ligature.LigatureStore
+import org.libraryweasel.ligature.ReadTx
+import org.libraryweasel.ligature.WriteTx
 
 sealed class StorageType
 data class DirectoryStorage(val path: Path): StorageType()
@@ -45,52 +42,19 @@ class XodusLigatureStore private constructor(private val environment: Environmen
         }
     }
 
-    override fun close() {
+    override suspend fun close() {
         environment.close()
     }
 
-    override fun collection(collectionName: Entity): LigatureCollection {
+    override suspend fun isOpen(): Boolean {
         TODO("Not yet implemented")
     }
 
-    override fun createCollection(collectionName: Entity): LigatureCollection {
+    override suspend fun readTx(): ReadTx {
         TODO("Not yet implemented")
     }
 
-    override fun deleteCollection(name: Entity) {
-        if (environment.isOpen) {
-            XodusDataset.delete(name, environment)
-        } else {
-            throw RuntimeException("Store is closed.")
-        }
-    }
-
-    override fun collection(name: String): LigatureCollection {
-        return if (environment.isOpen) {
-            XodusDataset.createOrOpen(name, environment)
-        } else {
-            throw RuntimeException("Store is closed.")
-        }
-    }
-
-    override fun allCollections(): Flow<Entity> {
-        return if (environment.isOpen) {
-            val names = environment.computeInReadonlyTransaction {
-                environment.getAllStoreNames(it)
-            }
-            names.stream()
-                .filter { it.endsWith("#pso") }
-                .map { it.removeSuffix("#pso") }
-        } else {
-            throw RuntimeException("Store is closed.")
-        }
-    }
-
-    fun <T>computeInReadonlyTransaction(computable: TransactionalComputable<T>): T {
-        return if (environment.isOpen) {
-            environment.computeInReadonlyTransaction(computable)
-        } else {
-            throw RuntimeException("Store is closed.")
-        }
+    override suspend fun writeTx(): WriteTx {
+        TODO("Not yet implemented")
     }
 }

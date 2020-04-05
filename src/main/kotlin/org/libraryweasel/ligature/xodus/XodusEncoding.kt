@@ -6,16 +6,19 @@ package org.libraryweasel.ligature.xodus
 
 import jetbrains.exodus.ByteIterable
 import jetbrains.exodus.bindings.StringBinding
+import org.libraryweasel.ligature.Entity
+import org.libraryweasel.ligature.LangLiteral
+import org.libraryweasel.ligature.Predicate
 import java.lang.RuntimeException
 
-fun encodeGraph(graph: Graph): ByteIterable {
+fun encodeContext(context: Entity): ByteIterable {
     return when (graph) {
         is DefaultGraph -> StringBinding.stringToEntry("")
         is NamedGraph -> StringBinding.stringToEntry("<${graph.iri.value}>")
     }
 }
 
-fun encodeSubject(subject: Subject): ByteIterable {
+fun encodeSubject(subject: Entity): ByteIterable {
     return when (subject) {
         is IRI -> StringBinding.stringToEntry("<${subject.value}>")
         is BlankNode -> StringBinding.stringToEntry("_:${subject.label}")
