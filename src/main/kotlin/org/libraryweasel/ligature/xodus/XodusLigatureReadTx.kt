@@ -10,12 +10,14 @@ import org.libraryweasel.ligature.*
 import java.lang.RuntimeException
 
 internal class XodusLigatureReadTx(private val environment: Environment): ReadTx {
+    private val readTx = environment.beginReadonlyTransaction()
+
     override fun allStatements(collection: CollectionName): Flow<Statement> {
         TODO("Not yet implemented")
     }
 
     override fun cancel() {
-        TODO("Not yet implemented")
+        readTx.abort()
     }
 
     override fun collections(): Flow<CollectionName> {
@@ -30,9 +32,7 @@ internal class XodusLigatureReadTx(private val environment: Environment): ReadTx
         TODO("Not yet implemented")
     }
 
-    override fun isOpen(): Boolean {
-        TODO("Not yet implemented")
-    }
+    override fun isOpen(): Boolean = !readTx.isFinished
 
     override fun matchStatements(collection: CollectionName, subject: Entity?, predicate: Predicate?, `object`: Object?, context: Entity?): Flow<Statement> {
         TODO("Not yet implemented")

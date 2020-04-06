@@ -12,6 +12,8 @@ import org.libraryweasel.ligature.WriteTx
 import java.lang.RuntimeException
 
 internal class XodusLigatureWriteTx(private val environment: Environment): WriteTx {
+    private val writeTx = environment.beginTransaction()
+
 //    override fun deleteCollection(name: Entity) {
 //        if (environment.isOpen) {
 //            XodusDataset.delete(name, environment)
@@ -32,12 +34,10 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
         TODO("Not yet implemented")
     }
 
-    override fun cancel() {
-        TODO("Not yet implemented")
-    }
+    override fun cancel() = writeTx.abort()
 
     override fun commit() {
-        TODO("Not yet implemented")
+        writeTx.commit()
     }
 
     override fun createCollection(collection: CollectionName) {
@@ -48,9 +48,7 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
         TODO("Not yet implemented")
     }
 
-    override fun isOpen(): Boolean {
-        TODO("Not yet implemented")
-    }
+    override fun isOpen(): Boolean = !writeTx.isFinished
 
     override fun newEntity(collection: CollectionName): Entity {
         TODO("Not yet implemented")
