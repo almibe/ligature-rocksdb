@@ -6,6 +6,8 @@ package org.libraryweasel.ligature.xodus
 
 import jetbrains.exodus.env.Environment
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.map
 import org.libraryweasel.ligature.*
 import java.lang.RuntimeException
 
@@ -21,7 +23,11 @@ internal class XodusLigatureReadTx(private val environment: Environment): ReadTx
     }
 
     override fun collections(): Flow<CollectionName> {
-        TODO("Not yet implemented")
+        return if (isOpen()) { environment.getAllStoreNames(readTx).asFlow().map {
+            CollectionName(it)
+        }} else {
+            throw RuntimeException("Transaction is closed.")
+        }
     }
 
     override fun collections(prefix: CollectionName): Flow<CollectionName> {
@@ -41,18 +47,5 @@ internal class XodusLigatureReadTx(private val environment: Environment): ReadTx
     override fun matchStatements(collection: CollectionName, subject: Entity?, predicate: Predicate?, range: Range<*>, context: Entity?): Flow<Statement> {
         TODO("Not yet implemented")
     }
-//    override fun allCollections(): Flow<Entity> {
-//        return if (environment.isOpen) {
-//            val names = environment.computeInReadonlyTransaction {
-//                environment.getAllStoreNames(it)
-//            }
-//            names.stream()
-//                    .filter { it.endsWith("#pso") }
-//                    .map { it.removeSuffix("#pso") }
-//        } else {
-//            throw RuntimeException("Store is closed.")
-//        }
-//    }
-
 }
 

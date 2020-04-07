@@ -5,6 +5,7 @@
 package org.libraryweasel.ligature.xodus
 
 import jetbrains.exodus.env.Environment
+import jetbrains.exodus.env.StoreConfig
 import org.libraryweasel.ligature.CollectionName
 import org.libraryweasel.ligature.Entity
 import org.libraryweasel.ligature.Statement
@@ -41,11 +42,21 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
     }
 
     override fun createCollection(collection: CollectionName) {
-        TODO("Not yet implemented")
+        if (isOpen()) {
+            environment.openStore(collection.name, StoreConfig.WITHOUT_DUPLICATES, writeTx)
+        } else {
+            throw RuntimeException("Transaction is closed.")
+        }
     }
 
     override fun deleteCollection(collection: CollectionName) {
-        TODO("Not yet implemented")
+        if (isOpen()) {
+            if (environment.storeExists(collection.name, writeTx)) {
+                environment.removeStore(collection.name, writeTx)
+            }
+        } else {
+            throw RuntimeException("Transaction is closed.")
+        }
     }
 
     override fun isOpen(): Boolean = !writeTx.isFinished
