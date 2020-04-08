@@ -290,29 +290,6 @@ internal enum class Prefixes(val prefix: Int) {
 //        throw RuntimeException("Invalid Literal - $literalString")
 //    }
 //
-//    private fun addStatement(graphId: Long, subjectId: Long, predicateId: Long, objectId: Long, txn: Transaction) {
-//        val spo = EncodedQuad(graphId, subjectId, predicateId, objectId)
-//        val sop = EncodedQuad(graphId, subjectId, objectId, predicateId)
-//        val pos = EncodedQuad(graphId, predicateId, objectId, subjectId)
-//        val pso = EncodedQuad(graphId, predicateId, subjectId, objectId)
-//        val osp = EncodedQuad(graphId, objectId, subjectId, predicateId)
-//        val ops = EncodedQuad(graphId, objectId, predicateId, subjectId)
-//
-//        val spoStore = environment.openStore(Suffixes.EAVG.storeName(name), StoreConfig.USE_EXISTING, txn)
-//        val sopStore = environment.openStore(Suffixes.EVAG.storeName(name), StoreConfig.USE_EXISTING, txn)
-//        val posStore = environment.openStore(Suffixes.AVEG.storeName(name), StoreConfig.USE_EXISTING, txn)
-//        val psoStore = environment.openStore(Suffixes.AEVG.storeName(name), StoreConfig.USE_EXISTING, txn)
-//        val ospStore = environment.openStore(Suffixes.VEAG.storeName(name), StoreConfig.USE_EXISTING, txn)
-//        val opsStore = environment.openStore(Suffixes.VAEG.storeName(name), StoreConfig.USE_EXISTING, txn)
-//
-//        spoStore.put(txn, spo.toByteIterable(), BooleanBinding.booleanToEntry(true))
-//        sopStore.put(txn, sop.toByteIterable(), BooleanBinding.booleanToEntry(true))
-//        posStore.put(txn, pos.toByteIterable(), BooleanBinding.booleanToEntry(true))
-//        psoStore.put(txn, pso.toByteIterable(), BooleanBinding.booleanToEntry(true))
-//        ospStore.put(txn, osp.toByteIterable(), BooleanBinding.booleanToEntry(true))
-//        opsStore.put(txn, ops.toByteIterable(), BooleanBinding.booleanToEntry(true))
-//    }
-//
 //    private fun removeStatement(graphId: Long, subjectId: Long, predicateId: Long, objectId: Long, txn: Transaction) {
 //        val spo = EncodedQuad(graphId, subjectId, predicateId, objectId)
 //        val sop = EncodedQuad(graphId, subjectId, objectId, predicateId)

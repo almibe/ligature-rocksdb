@@ -4,7 +4,9 @@
 
 package org.libraryweasel.ligature.xodus
 
+import jetbrains.exodus.bindings.BooleanBinding
 import jetbrains.exodus.env.Environment
+import jetbrains.exodus.env.Store
 import jetbrains.exodus.env.StoreConfig
 import org.libraryweasel.ligature.*
 import java.lang.RuntimeException
@@ -19,10 +21,28 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
             val predicateId = getOrCreatePredicateId(statement.predicate)
             val objectId = getOrCreateObjectId(statement.`object`)
             val contextId = getOrCreateEntityId(statement.context)
-
+            addStatement(subjectId, predicateId, objectId, contextId, store)
         } else {
             throw RuntimeException("Transaction is closed.")
         }
+    }
+
+    private fun addStatement(subjectId: Long, predicateId: Long, objectId: Long, contextId: Long, store: Store) {
+        val spoc = EncodedQuad(Prefixes.SPOC.prefix, subjectId, predicateId, objectId, contextId)
+        val sopc = EncodedQuad(Prefixes.SOPC.prefix, subjectId, objectId, predicateId, contextId)
+        val posc = EncodedQuad(Prefixes.POSC.prefix, predicateId, objectId, subjectId, contextId)
+        val psoc = EncodedQuad(Prefixes.PSOC.prefix, predicateId, subjectId, objectId, contextId)
+        val ospc = EncodedQuad(Prefixes.OSPC.prefix, objectId, subjectId, predicateId, contextId)
+        val opsc = EncodedQuad(Prefixes.OPSC.prefix, objectId, predicateId, subjectId, contextId)
+        val cspo = EncodedQuad(Prefixes.CSPO.prefix, contextId, subjectId, predicateId, objectId)
+
+        store.put(writeTx, spoc.toByteIterable(), BooleanBinding.booleanToEntry(true))
+        store.put(writeTx, sopc.toByteIterable(), BooleanBinding.booleanToEntry(true))
+        store.put(writeTx, posc.toByteIterable(), BooleanBinding.booleanToEntry(true))
+        store.put(writeTx, psoc.toByteIterable(), BooleanBinding.booleanToEntry(true))
+        store.put(writeTx, ospc.toByteIterable(), BooleanBinding.booleanToEntry(true))
+        store.put(writeTx, opsc.toByteIterable(), BooleanBinding.booleanToEntry(true))
+        store.put(writeTx, cspo.toByteIterable(), BooleanBinding.booleanToEntry(true))
     }
 
     override fun cancel() = writeTx.abort()

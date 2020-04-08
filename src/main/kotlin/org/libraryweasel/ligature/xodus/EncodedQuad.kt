@@ -8,8 +8,10 @@ import jetbrains.exodus.ByteIterable
 import jetbrains.exodus.CompoundByteIterable
 import jetbrains.exodus.bindings.IntegerBinding.entryToInt
 import jetbrains.exodus.bindings.IntegerBinding.intToEntry
+import jetbrains.exodus.bindings.LongBinding.entryToLong
+import jetbrains.exodus.bindings.LongBinding.longToEntry
 
-internal data class EncodedQuad(val first: Int, val second: Int, val third: Int, val fourth: Int): Comparable<EncodedQuad> {
+internal data class EncodedQuad(val prefix: Int, val first: Long, val second: Long, val third: Long, val fourth: Long): Comparable<EncodedQuad> {
     override fun compareTo(other: EncodedQuad): Int {
         val result0 = first.compareTo(other.first)
         if (result0 != 0) {
@@ -28,21 +30,22 @@ internal data class EncodedQuad(val first: Int, val second: Int, val third: Int,
 
     fun toByteIterable(): ByteIterable {
         return CompoundByteIterable(arrayOf(
-                intToEntry(first),
-                intToEntry(second),
-                intToEntry(third),
-                intToEntry(fourth)
+                intToEntry(prefix),
+                longToEntry(first),
+                longToEntry(second),
+                longToEntry(third),
+                longToEntry(fourth)
         ))
     }
 
     companion object {
         fun fromByteIterable(byteIterable: ByteIterable): EncodedQuad {
-            val offset = byteIterable.length/4
             return EncodedQuad(
-                    entryToInt(byteIterable.subIterable(0, offset)),
-                    entryToInt(byteIterable.subIterable(offset, offset*2)),
-                    entryToInt(byteIterable.subIterable(offset*2, offset*3)),
-                    entryToInt(byteIterable.subIterable(offset*3, offset*4))
+                    entryToInt(byteIterable.subIterable(0, Int.SIZE_BYTES)),
+                    entryToLong(byteIterable.subIterable(Int.SIZE_BYTES, Int.SIZE_BYTES + Long.SIZE_BYTES)),
+                    entryToLong(byteIterable.subIterable(Int.SIZE_BYTES + Long.SIZE_BYTES, Int.SIZE_BYTES + Long.SIZE_BYTES*2)),
+                    entryToLong(byteIterable.subIterable(Int.SIZE_BYTES + Long.SIZE_BYTES*2, Int.SIZE_BYTES + Long.SIZE_BYTES*3)),
+                    entryToLong(byteIterable.subIterable(Int.SIZE_BYTES + Long.SIZE_BYTES*3, Int.SIZE_BYTES + Long.SIZE_BYTES*4))
             )
         }
     }
