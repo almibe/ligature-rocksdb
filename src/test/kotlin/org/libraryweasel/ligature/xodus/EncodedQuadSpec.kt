@@ -11,7 +11,7 @@ import kotlin.random.Random
 class EncodedQuadSpec: StringSpec() {
     init {
         "test encoding and decoding a quad" {
-            val encodedQuad = EncodedQuad(0, 1, 2, 3)
+            val encodedQuad = EncodedQuad(0,1, 2, 3, 4)
             val byteIterable = encodedQuad.toByteIterable()
             val encodedQuad2 = EncodedQuad.fromByteIterable(byteIterable)
             encodedQuad shouldBe encodedQuad2
@@ -19,7 +19,7 @@ class EncodedQuadSpec: StringSpec() {
 
         "test random quads" {
             for (i in 0..100) {
-                val encodedQuad = EncodedQuad(Random.nextInt(), Random.nextInt(), Random.nextInt(), Random.nextInt())
+                val encodedQuad = EncodedQuad(Random.nextInt(), Random.nextLong(), Random.nextLong(), Random.nextLong(), Random.nextLong())
                 val byteIterable = encodedQuad.toByteIterable()
                 val encodedQuad2 = EncodedQuad.fromByteIterable(byteIterable)
                 encodedQuad shouldBe encodedQuad2
