@@ -5,14 +5,10 @@
 package org.libraryweasel.ligature.xodus
 
 import jetbrains.exodus.CompoundByteIterable
-import jetbrains.exodus.bindings.IntegerBinding
-import jetbrains.exodus.bindings.LongBinding
-import jetbrains.exodus.bindings.StringBinding
+import jetbrains.exodus.bindings.*
 import jetbrains.exodus.env.Store
 import jetbrains.exodus.env.Transaction
-import org.libraryweasel.ligature.Entity
-import org.libraryweasel.ligature.Object
-import org.libraryweasel.ligature.Predicate
+import org.libraryweasel.ligature.*
 
 internal enum class Prefixes(val prefix: Int) {
     InternalCounter(0),
@@ -55,10 +51,52 @@ internal fun getPredicateId(store: Store, tx: Transaction, predicate: Predicate)
     }
 }
 
-internal fun getObjectId(store: Store, tx: Transaction, `object`: Object): Long? {
-    TODO("Not yet implemented")
+internal fun getLiteralId(store: Store, tx: Transaction, literal: Literal): Long? {
+    val result = when (literal) {
+        is LangLiteral -> {
+            store.get(tx, CompoundByteIterable(arrayOf(
+                    IntegerBinding.intToEntry(Prefixes.LangLiteral.prefix),
+                    StringBinding.stringToEntry("${literal.langTag}@${literal.value}")
+            )))
+        }
+        is StringLiteral -> {
+            store.get(tx, CompoundByteIterable(arrayOf(
+                    IntegerBinding.intToEntry(Prefixes.StringLiteral.prefix),
+                    StringBinding.stringToEntry(literal.value)
+            )))
+        }
+        is BooleanLiteral -> {
+            store.get(tx, CompoundByteIterable(arrayOf(
+                    IntegerBinding.intToEntry(Prefixes.BooleanLiteral.prefix),
+                    BooleanBinding.booleanToEntry(literal.value)
+            )))
+        }
+        is LongLiteral -> {
+            store.get(tx, CompoundByteIterable(arrayOf(
+                    IntegerBinding.intToEntry(Prefixes.LongLiteral.prefix),
+                    LongBinding.longToEntry(literal.value)
+            )))
+        }
+        is DoubleLiteral -> {
+            store.get(tx, CompoundByteIterable(arrayOf(
+                    IntegerBinding.intToEntry(Prefixes.DoubleLiteral.prefix),
+                    DoubleBinding.doubleToEntry(literal.value)
+            )))
+        }
+    }
+    return if (result == null) {
+        null
+    } else {
+        LongBinding.entryToLong(result)
+    }
 }
 
+internal fun getObjectId(store: Store, tx: Transaction, `object`: Object): Long? {
+    return when (`object`) {
+        is Entity -> getEntityId(store, tx, `object`)
+        is Literal -> getLiteralId(store, tx, `object`)
+    }
+}
 
 //    override fun allStatements(): Stream<Statement> { //TODO rewrite to use streams better
 //        return environment.computeInReadonlyTransaction { txn ->
