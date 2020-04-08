@@ -15,21 +15,22 @@ import org.libraryweasel.ligature.Object
 import org.libraryweasel.ligature.Predicate
 
 internal enum class Prefixes(val prefix: Int) {
-    Counter(0),
-    EntityId(1),
-    PredicateId(2),
-    SPOC(3),
-    SOPC(4),
-    PSOC(5),
-    POSC(6),
-    OSPC(7),
-    OPSC(8),
-    CSPO(9),
-    LangLiteral(10),
-    StringLiteral(11),
-    BooleanLiteral(12),
-    LongLiteral(13),
-    DoubleLiteral(14)
+    InternalCounter(0),
+    ExternalCounter(1),
+    EntityId(2),
+    PredicateId(3),
+    SPOC(4),
+    SOPC(5),
+    PSOC(6),
+    POSC(7),
+    OSPC(8),
+    OPSC(9),
+    CSPO(10),
+    LangLiteral(11),
+    StringLiteral(12),
+    BooleanLiteral(13),
+    LongLiteral(14),
+    DoubleLiteral(15)
 }
 
 internal fun getEntityId(store: Store, tx: Transaction, entity: Entity): Long? {
