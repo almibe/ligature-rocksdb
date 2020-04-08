@@ -17,10 +17,10 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
     override fun addStatement(collection: CollectionName, statement: Statement) {
         if (isOpen()) {
             val store = environment.openStore(collection.name, StoreConfig.WITHOUT_DUPLICATES, writeTx)
-            val subjectId = getOrCreateEntityId(statement.subject)
-            val predicateId = getOrCreatePredicateId(statement.predicate)
-            val objectId = getOrCreateObjectId(statement.`object`)
-            val contextId = getOrCreateEntityId(statement.context)
+            val subjectId = getOrCreateEntityId(store, statement.subject)
+            val predicateId = getOrCreatePredicateId(store, statement.predicate)
+            val objectId = getOrCreateObjectId(store, statement.`object`)
+            val contextId = getOrCreateEntityId(store, statement.context)
             addStatement(subjectId, predicateId, objectId, contextId, store)
         } else {
             throw RuntimeException("Transaction is closed.")
@@ -79,15 +79,27 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
         TODO("Not yet implemented")
     }
 
-    private fun getOrCreateEntityId(entity: Entity): Long {
-        TODO("Not yet implemented")
+    private fun getOrCreateEntityId(store: Store, entity: Entity): Long {
+        return getEntityId(store, writeTx, entity) ?: createEntityId(store, entity)
     }
 
-    private fun getOrCreatePredicateId(predicate: Predicate): Long {
-        TODO("Not yet implemented")
+    private fun getOrCreatePredicateId(store: Store, predicate: Predicate): Long {
+        return getPredicateId(store, writeTx, predicate) ?: createPredicateId(store, predicate)
     }
 
-    private fun getOrCreateObjectId(`object`: Object): Long {
-        TODO("Not yet implemented")
+    private fun getOrCreateObjectId(store: Store, `object`: Object): Long {
+        return getObjectId(store, writeTx, `object`) ?: createObjectId(store, `object`)
+    }
+
+    private fun createEntityId(store: Store, entity: Entity): Long {
+        TODO("Not yet implemented.")
+    }
+
+    private fun createPredicateId(store: Store, predicate: Predicate): Long {
+        TODO("Not yet implemented.")
+    }
+
+    private fun createObjectId(store: Store, `object`: Object): Long {
+        TODO("Not yet implemented.")
     }
 }

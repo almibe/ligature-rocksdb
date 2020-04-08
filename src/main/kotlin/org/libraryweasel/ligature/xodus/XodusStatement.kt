@@ -4,6 +4,16 @@
 
 package org.libraryweasel.ligature.xodus
 
+import jetbrains.exodus.CompoundByteIterable
+import jetbrains.exodus.bindings.IntegerBinding
+import jetbrains.exodus.bindings.LongBinding
+import jetbrains.exodus.bindings.StringBinding
+import jetbrains.exodus.env.Store
+import jetbrains.exodus.env.Transaction
+import org.libraryweasel.ligature.Entity
+import org.libraryweasel.ligature.Object
+import org.libraryweasel.ligature.Predicate
+
 internal enum class Prefixes(val prefix: Int) {
     Counter(0),
     EntityId(1),
@@ -21,6 +31,33 @@ internal enum class Prefixes(val prefix: Int) {
     LongLiteral(13),
     DoubleLiteral(14)
 }
+
+internal fun getEntityId(store: Store, tx: Transaction, entity: Entity): Long? {
+    val result = store.get(tx, CompoundByteIterable(arrayOf(
+            IntegerBinding.intToEntry(Prefixes.EntityId.prefix),
+            StringBinding.stringToEntry(entity.identifier))))
+    return if (result == null) {
+        null
+    } else {
+        LongBinding.entryToLong(result)
+    }
+}
+
+internal fun getPredicateId(store: Store, tx: Transaction, predicate: Predicate): Long? {
+    val result = store.get(tx, CompoundByteIterable(arrayOf(
+            IntegerBinding.intToEntry(Prefixes.PredicateId.prefix),
+            StringBinding.stringToEntry(predicate.identifier))))
+    return if (result == null) {
+        null
+    } else {
+        LongBinding.entryToLong(result)
+    }
+}
+
+internal fun getObjectId(store: Store, tx: Transaction, `object`: Object): Long? {
+    TODO("Not yet implemented")
+}
+
 
 //    override fun allStatements(): Stream<Statement> { //TODO rewrite to use streams better
 //        return environment.computeInReadonlyTransaction { txn ->
