@@ -4,83 +4,24 @@
 
 package org.libraryweasel.ligature.xodus
 
-//import jetbrains.exodus.ByteIterable
-//import jetbrains.exodus.bindings.BooleanBinding
-//import jetbrains.exodus.bindings.LongBinding
-//import jetbrains.exodus.bindings.StringBinding
-//import jetbrains.exodus.env.Environment
-//import jetbrains.exodus.env.StoreConfig
-//import jetbrains.exodus.env.Transaction
-//import java.lang.RuntimeException
-//import java.util.concurrent.locks.ReentrantLock
-//import java.util.stream.Stream
-//import kotlin.concurrent.withLock
-//
-//private enum class Suffixes(val value: String) {
-//    Counter("#cnt"),
-//    GraphId("#gid"),
-//    IdGraph("#idg"),
-//    NodeId("#nid"),
-//    IdNode("#idn"),
-//    LiteralId("#lid"),
-//    IdLiteral("#idl"),
-//    EAVG("#eavg"),
-//    EVAG("#evag"),
-//    AVEG("#aveg"),
-//    AEVG("#aevg"),
-//    VEAG("#veag"),
-//    VAEG("#vaeg"),
-//    GEAV("#geav");
-//
-//    fun storeName(name: String): String {
-//        return "$name$value"
-//    }
-//}
-//
-//internal class XodusDataset private constructor(private val name: String,
-//                                                private val environment: Environment): Dataset {
-//
-//    companion object {
-//        fun createOrOpen(name: String, environment: Environment): XodusDataset {
-//            environment.executeInTransaction { txn ->
-//                Suffixes.values().forEach { suffix ->
-//                    environment.openStore(suffix.storeName(name), StoreConfig.WITHOUT_DUPLICATES, txn)
-//                }
-//            }
-//            return XodusDataset(name, environment)
-//        }
-//
-//        fun delete(name: String, environment: Environment) {
-//            WriteLock.lock.withLock {
-//                environment.executeInExclusiveTransaction {  txn ->
-//                    Suffixes.values().forEach { suffix ->
-//                        val storeName = suffix.storeName(name)
-//                        val store = environment.openStore(storeName, StoreConfig.USE_EXISTING, txn, false)
-//                        if (store != null) {
-//                            environment.removeStore(storeName, txn)
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-//
-//    override fun getDatasetName(): String = name
-//
-//    override fun addStatements(statements: Collection<Statement>) {
-//        WriteLock.lock.withLock {
-//            environment.executeInExclusiveTransaction { txn ->
-//                statements.forEach { statement ->
-//                    val graphId = fetchOrCreateGraphId(statement.graph, txn)
-//                    val subjectId = fetchOrCreateSubjectId(statement.subject, txn)
-//                    val predicateId = fetchOrCreatePredicateId(statement.predicate, txn)
-//                    val objectId = fetchOrCreateObjectId(statement.`object`, txn)
-//                    addStatement(graphId, subjectId, predicateId, objectId, txn)
-//                }
-//            }
-//        }
-//    }
-//
+internal enum class Prefixes(val prefix: Int) {
+    Counter(0),
+    EntityId(1),
+    PredicateId(2),
+    SPOC(3),
+    SOPC(4),
+    PSOC(5),
+    POSC(6),
+    OSPC(7),
+    OPSC(8),
+    CSPO(9),
+    LangLiteral(10),
+    StringLiteral(11),
+    BooleanLiteral(12),
+    LongLiteral(13),
+    DoubleLiteral(14)
+}
+
 //    override fun allStatements(): Stream<Statement> { //TODO rewrite to use streams better
 //        return environment.computeInReadonlyTransaction { txn ->
 //            val res = mutableListOf<Statement>()

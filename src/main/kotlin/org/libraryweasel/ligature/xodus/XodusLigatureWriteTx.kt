@@ -6,33 +6,23 @@ package org.libraryweasel.ligature.xodus
 
 import jetbrains.exodus.env.Environment
 import jetbrains.exodus.env.StoreConfig
-import org.libraryweasel.ligature.CollectionName
-import org.libraryweasel.ligature.Entity
-import org.libraryweasel.ligature.Statement
-import org.libraryweasel.ligature.WriteTx
+import org.libraryweasel.ligature.*
 import java.lang.RuntimeException
 
 internal class XodusLigatureWriteTx(private val environment: Environment): WriteTx {
     private val writeTx = environment.beginTransaction()
 
-//    override fun deleteCollection(name: Entity) {
-//        if (environment.isOpen) {
-//            XodusDataset.delete(name, environment)
-//        } else {
-//            throw RuntimeException("Store is closed.")
-//        }
-//    }
-//
-//    override fun collection(name: String): LigatureCollection {
-//        return if (environment.isOpen) {
-//            XodusDataset.createOrOpen(name, environment)
-//        } else {
-//            throw RuntimeException("Store is closed.")
-//        }
-//    }
-
     override fun addStatement(collection: CollectionName, statement: Statement) {
-        TODO("Not yet implemented")
+        if (isOpen()) {
+            val store = environment.openStore(collection.name, StoreConfig.WITHOUT_DUPLICATES, writeTx)
+            val subjectId = getOrCreateEntityId(statement.subject)
+            val predicateId = getOrCreatePredicateId(statement.predicate)
+            val objectId = getOrCreateObjectId(statement.`object`)
+            val contextId = getOrCreateEntityId(statement.context)
+
+        } else {
+            throw RuntimeException("Transaction is closed.")
+        }
     }
 
     override fun cancel() = writeTx.abort()
@@ -69,5 +59,15 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
         TODO("Not yet implemented")
     }
 
-}
+    private fun getOrCreateEntityId(entity: Entity): Long {
+        TODO("Not yet implemented")
+    }
 
+    private fun getOrCreatePredicateId(predicate: Predicate): Long {
+        TODO("Not yet implemented")
+    }
+
+    private fun getOrCreateObjectId(`object`: Object): Long {
+        TODO("Not yet implemented")
+    }
+}
