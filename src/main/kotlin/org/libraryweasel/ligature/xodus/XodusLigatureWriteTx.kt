@@ -5,6 +5,8 @@
 package org.libraryweasel.ligature.xodus
 
 import jetbrains.exodus.bindings.BooleanBinding
+import jetbrains.exodus.bindings.IntegerBinding
+import jetbrains.exodus.bindings.LongBinding
 import jetbrains.exodus.env.Environment
 import jetbrains.exodus.env.Store
 import jetbrains.exodus.env.StoreConfig
@@ -14,13 +16,13 @@ import java.lang.RuntimeException
 internal class XodusLigatureWriteTx(private val environment: Environment): WriteTx {
     private val writeTx = environment.beginTransaction()
 
-    override fun addStatement(collection: CollectionName, statement: Statement) {
+    @Synchronized override fun addStatement(collection: CollectionName, statement: Statement) {
         if (isOpen()) {
             val store = environment.openStore(collection.name, StoreConfig.WITHOUT_DUPLICATES, writeTx)
-            val subjectId = getOrCreateEntityId(store, statement.subject)
+            val subjectId = checkEntityId(store, statement.subject)
             val predicateId = getOrCreatePredicateId(store, statement.predicate)
             val objectId = getOrCreateObjectId(store, statement.`object`)
-            val contextId = getOrCreateEntityId(store, statement.context)
+            val contextId = checkEntityId(store, statement.context)
             addStatement(subjectId, predicateId, objectId, contextId, store)
         } else {
             throw RuntimeException("Transaction is closed.")
@@ -45,13 +47,13 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
         store.put(writeTx, cspo.toByteIterable(), BooleanBinding.booleanToEntry(true))
     }
 
-    override fun cancel() = writeTx.abort()
+    @Synchronized override fun cancel() = writeTx.abort()
 
-    override fun commit() {
+    @Synchronized override fun commit() {
         writeTx.commit()
     }
 
-    override fun createCollection(collection: CollectionName) {
+    @Synchronized override fun createCollection(collection: CollectionName) {
         if (isOpen()) {
             environment.openStore(collection.name, StoreConfig.WITHOUT_DUPLICATES, writeTx)
         } else {
@@ -59,7 +61,7 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
         }
     }
 
-    override fun deleteCollection(collection: CollectionName) {
+    @Synchronized override fun deleteCollection(collection: CollectionName) {
         if (isOpen()) {
             if (environment.storeExists(collection.name, writeTx)) {
                 environment.removeStore(collection.name, writeTx)
@@ -69,18 +71,42 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
         }
     }
 
-    override fun isOpen(): Boolean = !writeTx.isFinished
+    @Synchronized override fun isOpen(): Boolean = !writeTx.isFinished
 
-    override fun newEntity(collection: CollectionName): Entity {
+    @Synchronized override fun newEntity(collection: CollectionName): Entity {
+        if (isOpen()) {
+            val store = environment.openStore(collection.name, StoreConfig.WITHOUT_DUPLICATES, writeTx)
+            val result = store.get(writeTx, IntegerBinding.intToEntry(Prefixes.ExternalCounter.prefix))
+            val nextId = if (result == null) {
+                1
+            } else {
+                LongBinding.entryToLong(result)+1
+            }
+            store.put(writeTx, IntegerBinding.intToEntry(Prefixes.ExternalCounter.prefix), LongBinding.longToEntry(nextId))
+            return Entity(nextId)
+        } else {
+            throw RuntimeException("Transaction is closed.")
+        }
+    }
+
+    @Synchronized override fun removeStatement(collection: CollectionName, statement: Statement) {
         TODO("Not yet implemented")
     }
 
-    override fun removeStatement(collection: CollectionName, statement: Statement) {
-        TODO("Not yet implemented")
-    }
-
-    private fun getOrCreateEntityId(store: Store, entity: Entity): Long {
-        return getEntityId(store, writeTx, entity) ?: createEntityId(store, entity)
+    private fun checkEntityId(store: Store, entity: Entity): Long {
+        if (entity.identifier == 0L) return 0L
+        if (entity.identifier < 0L) throw RuntimeException("Invalid Entity Id = ${entity.identifier}")
+        val result = store.get(writeTx, IntegerBinding.intToEntry(Prefixes.ExternalCounter.prefix))
+        if (result == null) {
+            throw RuntimeException("Invalid Entity Id = ${entity.identifier}")
+        } else {
+            val maxId = LongBinding.entryToLong(result)
+            if (entity.identifier <= maxId) {
+                return entity.identifier
+            } else {
+                throw RuntimeException("Invalid Entity Id = ${entity.identifier}")
+            }
+        }
     }
 
     private fun getOrCreatePredicateId(store: Store, predicate: Predicate): Long {
@@ -89,10 +115,6 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
 
     private fun getOrCreateObjectId(store: Store, `object`: Object): Long {
         return getObjectId(store, writeTx, `object`) ?: createObjectId(store, `object`)
-    }
-
-    private fun createEntityId(store: Store, entity: Entity): Long {
-        TODO("Not yet implemented.")
     }
 
     private fun createPredicateId(store: Store, predicate: Predicate): Long {
