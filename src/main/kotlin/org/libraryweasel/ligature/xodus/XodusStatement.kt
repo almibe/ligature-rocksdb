@@ -32,7 +32,7 @@ internal enum class Prefixes(val prefix: Int) {
 internal fun getEntityId(store: Store, tx: Transaction, entity: Entity): Long? {
     val result = store.get(tx, CompoundByteIterable(arrayOf(
             IntegerBinding.intToEntry(Prefixes.EntityId.prefix),
-            StringBinding.stringToEntry(entity.identifier))))
+            LongBinding.longToEntry(entity.identifier))))
     return if (result == null) {
         null
     } else {
