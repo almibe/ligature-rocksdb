@@ -76,13 +76,13 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
     @Synchronized override fun newEntity(collection: CollectionName): Entity {
         if (isOpen()) {
             val store = environment.openStore(collection.name, StoreConfig.WITHOUT_DUPLICATES, writeTx)
-            val result = store.get(writeTx, IntegerBinding.intToEntry(Prefixes.ExternalCounter.prefix))
+            val result = store.get(writeTx, IntegerBinding.intToEntry(Prefixes.EntityId.prefix))
             val nextId = if (result == null) {
                 1
             } else {
                 LongBinding.entryToLong(result)+1
             }
-            store.put(writeTx, IntegerBinding.intToEntry(Prefixes.ExternalCounter.prefix), LongBinding.longToEntry(nextId))
+            store.put(writeTx, IntegerBinding.intToEntry(Prefixes.EntityId.prefix), LongBinding.longToEntry(nextId))
             return Entity(nextId)
         } else {
             throw RuntimeException("Transaction is closed.")
@@ -96,7 +96,7 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
     private fun checkEntityId(store: Store, entity: Entity): Long {
         if (entity.identifier == 0L) return 0L
         if (entity.identifier < 0L) throw RuntimeException("Invalid Entity Id = ${entity.identifier}")
-        val result = store.get(writeTx, IntegerBinding.intToEntry(Prefixes.ExternalCounter.prefix))
+        val result = store.get(writeTx, IntegerBinding.intToEntry(Prefixes.EntityId.prefix))
         if (result == null) {
             throw RuntimeException("Invalid Entity Id = ${entity.identifier}")
         } else {
