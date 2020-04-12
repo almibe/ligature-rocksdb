@@ -19,10 +19,10 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
     @Synchronized override fun addStatement(collection: CollectionName, statement: Statement) {
         if (isOpen()) {
             val store = environment.openStore(collection.name, StoreConfig.WITHOUT_DUPLICATES, writeTx)
-            val subjectId = checkEntityId(store, statement.subject)
+            val subjectId = checkEntityId(store, writeTx, statement.subject)
             val predicateId = getOrCreatePredicateId(store, statement.predicate)
             val objectId = getOrCreateObjectId(store, statement.`object`)
-            val contextId = checkEntityId(store, statement.context)
+            val contextId = checkEntityId(store, writeTx, statement.context)
             addStatement(subjectId, predicateId, objectId, contextId, store)
         } else {
             throw RuntimeException("Transaction is closed.")
@@ -76,13 +76,13 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
     @Synchronized override fun newEntity(collection: CollectionName): Entity {
         if (isOpen()) {
             val store = environment.openStore(collection.name, StoreConfig.WITHOUT_DUPLICATES, writeTx)
-            val result = store.get(writeTx, IntegerBinding.intToEntry(Prefixes.EntityId.prefix))
+            val result = store.get(writeTx, IntegerBinding.intToEntry(Prefixes.EntityIdCounter.prefix))
             val nextId = if (result == null) {
                 1
             } else {
                 LongBinding.entryToLong(result)+1
             }
-            store.put(writeTx, IntegerBinding.intToEntry(Prefixes.EntityId.prefix), LongBinding.longToEntry(nextId))
+            store.put(writeTx, IntegerBinding.intToEntry(Prefixes.EntityIdCounter.prefix), LongBinding.longToEntry(nextId))
             return Entity(nextId)
         } else {
             throw RuntimeException("Transaction is closed.")
@@ -91,22 +91,6 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
 
     @Synchronized override fun removeStatement(collection: CollectionName, statement: Statement) {
         TODO("Not yet implemented")
-    }
-
-    private fun checkEntityId(store: Store, entity: Entity): Long {
-        if (entity.identifier == 0L) return 0L
-        if (entity.identifier < 0L) throw RuntimeException("Invalid Entity Id = ${entity.identifier}")
-        val result = store.get(writeTx, IntegerBinding.intToEntry(Prefixes.EntityId.prefix))
-        if (result == null) {
-            throw RuntimeException("Invalid Entity Id = ${entity.identifier}")
-        } else {
-            val maxId = LongBinding.entryToLong(result)
-            if (entity.identifier <= maxId) {
-                return entity.identifier
-            } else {
-                throw RuntimeException("Invalid Entity Id = ${entity.identifier}")
-            }
-        }
     }
 
     private fun getOrCreatePredicateId(store: Store, predicate: Predicate): Long {

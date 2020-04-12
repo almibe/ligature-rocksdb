@@ -9,11 +9,12 @@ import jetbrains.exodus.bindings.*
 import jetbrains.exodus.env.Store
 import jetbrains.exodus.env.Transaction
 import org.libraryweasel.ligature.*
+import java.lang.RuntimeException
 
 internal enum class Prefixes(val prefix: Int) {
-    EntityId(0),
-    PredicateId(1),
-    LiteralId(2),
+    EntityIdCounter(0),
+    PredicateIdCounter(1),
+    LiteralIdCounter(2),
     SPOC(3),
     SOPC(4),
     PSOC(5),
@@ -21,27 +22,33 @@ internal enum class Prefixes(val prefix: Int) {
     OSPC(7),
     OPSC(8),
     CSPO(9),
-    LangLiteral(10),
-    StringLiteral(11),
-    BooleanLiteral(12),
-    LongLiteral(13),
-    DoubleLiteral(14)
+    PredicateToId(10),
+    LangLiteralToId(11),
+    StringLiteralToId(12),
+    BooleanLiteralToId(13),
+    LongLiteralToId(14),
+    DoubleLiteralToId(15)
 }
 
-internal fun getEntityId(store: Store, tx: Transaction, entity: Entity): Long? {
-    val result = store.get(tx, CompoundByteIterable(arrayOf(
-            IntegerBinding.intToEntry(Prefixes.EntityId.prefix),
-            LongBinding.longToEntry(entity.identifier))))
-    return if (result == null) {
-        null
+internal fun checkEntityId(store: Store, tx: Transaction, entity: Entity): Long {
+    if (entity.identifier == 0L) return 0L
+    if (entity.identifier < 0L) throw RuntimeException("Invalid Entity Id = ${entity.identifier}")
+    val result = store.get(tx, IntegerBinding.intToEntry(Prefixes.EntityIdCounter.prefix))
+    if (result == null) {
+        throw RuntimeException("Invalid Entity Id = ${entity.identifier}")
     } else {
-        LongBinding.entryToLong(result)
+        val maxId = LongBinding.entryToLong(result)
+        if (entity.identifier <= maxId) {
+            return entity.identifier
+        } else {
+            throw RuntimeException("Invalid Entity Id = ${entity.identifier}")
+        }
     }
 }
 
 internal fun getPredicateId(store: Store, tx: Transaction, predicate: Predicate): Long? {
     val result = store.get(tx, CompoundByteIterable(arrayOf(
-            IntegerBinding.intToEntry(Prefixes.PredicateId.prefix),
+            IntegerBinding.intToEntry(Prefixes.PredicateToId.prefix),
             StringBinding.stringToEntry(predicate.identifier))))
     return if (result == null) {
         null
@@ -54,31 +61,31 @@ internal fun getLiteralId(store: Store, tx: Transaction, literal: Literal): Long
     val result = when (literal) {
         is LangLiteral -> {
             store.get(tx, CompoundByteIterable(arrayOf(
-                    IntegerBinding.intToEntry(Prefixes.LangLiteral.prefix),
+                    IntegerBinding.intToEntry(Prefixes.LangLiteralToId.prefix),
                     StringBinding.stringToEntry("${literal.langTag}@${literal.value}")
             )))
         }
         is StringLiteral -> {
             store.get(tx, CompoundByteIterable(arrayOf(
-                    IntegerBinding.intToEntry(Prefixes.StringLiteral.prefix),
+                    IntegerBinding.intToEntry(Prefixes.StringLiteralToId.prefix),
                     StringBinding.stringToEntry(literal.value)
             )))
         }
         is BooleanLiteral -> {
             store.get(tx, CompoundByteIterable(arrayOf(
-                    IntegerBinding.intToEntry(Prefixes.BooleanLiteral.prefix),
+                    IntegerBinding.intToEntry(Prefixes.BooleanLiteralToId.prefix),
                     BooleanBinding.booleanToEntry(literal.value)
             )))
         }
         is LongLiteral -> {
             store.get(tx, CompoundByteIterable(arrayOf(
-                    IntegerBinding.intToEntry(Prefixes.LongLiteral.prefix),
+                    IntegerBinding.intToEntry(Prefixes.LongLiteralToId.prefix),
                     LongBinding.longToEntry(literal.value)
             )))
         }
         is DoubleLiteral -> {
             store.get(tx, CompoundByteIterable(arrayOf(
-                    IntegerBinding.intToEntry(Prefixes.DoubleLiteral.prefix),
+                    IntegerBinding.intToEntry(Prefixes.DoubleLiteralToId.prefix),
                     DoubleBinding.doubleToEntry(literal.value)
             )))
         }
@@ -92,7 +99,7 @@ internal fun getLiteralId(store: Store, tx: Transaction, literal: Literal): Long
 
 internal fun getObjectId(store: Store, tx: Transaction, `object`: Object): Long? {
     return when (`object`) {
-        is Entity -> getEntityId(store, tx, `object`)
+        is Entity -> checkEntityId(store, tx, `object`)
         is Literal -> getLiteralId(store, tx, `object`)
     }
 }
