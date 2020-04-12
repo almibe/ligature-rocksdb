@@ -4,9 +4,11 @@
 
 package org.libraryweasel.ligature.xodus
 
+import jetbrains.exodus.CompoundByteIterable
 import jetbrains.exodus.bindings.BooleanBinding
 import jetbrains.exodus.bindings.IntegerBinding
 import jetbrains.exodus.bindings.LongBinding
+import jetbrains.exodus.bindings.StringBinding
 import jetbrains.exodus.env.Environment
 import jetbrains.exodus.env.Store
 import jetbrains.exodus.env.StoreConfig
@@ -102,7 +104,21 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
     }
 
     private fun createPredicateId(store: Store, predicate: Predicate): Long {
-        TODO("Not yet implemented.")
+        val id = nextPredicateId(store)
+        store.put(writeTx, CompoundByteIterable(arrayOf(IntegerBinding.intToEntry(Prefixes.PredicateToId.prefix),
+                StringBinding.stringToEntry(predicate.identifier))), LongBinding.longToEntry(id))
+        return id
+    }
+
+    private fun nextPredicateId(store: Store): Long {
+        val result = store.get(writeTx, IntegerBinding.intToEntry(Prefixes.PredicateIdCounter.prefix))
+        val nextId = if (result == null) {
+            1
+        } else {
+            LongBinding.entryToLong(result) + 1L
+        }
+        store.put(writeTx, IntegerBinding.intToEntry(Prefixes.PredicateIdCounter.prefix), LongBinding.longToEntry(nextId))
+        return nextId
     }
 
     private fun createObjectId(store: Store, `object`: Object): Long {
