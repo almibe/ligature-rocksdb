@@ -18,7 +18,7 @@ import java.lang.RuntimeException
 internal class XodusLigatureWriteTx(private val environment: Environment): WriteTx {
     private val writeTx = environment.beginTransaction()
 
-    @Synchronized override fun addStatement(collection: CollectionName, statement: Statement) {
+    @Synchronized override suspend fun addStatement(collection: CollectionName, statement: Statement) {
         if (isOpen()) {
             val store = environment.openStore(collection.name, StoreConfig.WITHOUT_DUPLICATES, writeTx)
             val subjectId = checkEntityId(store, writeTx, statement.subject)
@@ -49,13 +49,13 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
         store.put(writeTx, cspo.toByteIterable(), BooleanBinding.booleanToEntry(true))
     }
 
-    @Synchronized override fun cancel() = writeTx.abort()
+    @Synchronized override suspend fun cancel() = writeTx.abort()
 
-    @Synchronized override fun commit() {
+    @Synchronized override suspend fun commit() {
         writeTx.commit()
     }
 
-    @Synchronized override fun createCollection(collection: CollectionName) {
+    @Synchronized override suspend fun createCollection(collection: CollectionName) {
         if (isOpen()) {
             environment.openStore(collection.name, StoreConfig.WITHOUT_DUPLICATES, writeTx)
         } else {
@@ -63,7 +63,7 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
         }
     }
 
-    @Synchronized override fun deleteCollection(collection: CollectionName) {
+    @Synchronized override suspend fun deleteCollection(collection: CollectionName) {
         if (isOpen()) {
             if (environment.storeExists(collection.name, writeTx)) {
                 environment.removeStore(collection.name, writeTx)
@@ -73,9 +73,9 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
         }
     }
 
-    @Synchronized override fun isOpen(): Boolean = !writeTx.isFinished
+    @Synchronized override suspend fun isOpen(): Boolean = !writeTx.isFinished
 
-    @Synchronized override fun newEntity(collection: CollectionName): Entity {
+    @Synchronized override suspend fun newEntity(collection: CollectionName): Entity {
         if (isOpen()) {
             val store = environment.openStore(collection.name, StoreConfig.WITHOUT_DUPLICATES, writeTx)
             val result = store.get(writeTx, IntegerBinding.intToEntry(Prefixes.EntityIdCounter.prefix))
@@ -91,7 +91,7 @@ internal class XodusLigatureWriteTx(private val environment: Environment): Write
         }
     }
 
-    @Synchronized override fun removeStatement(collection: CollectionName, statement: Statement) {
+    @Synchronized override suspend fun removeStatement(collection: CollectionName, statement: Statement) {
         TODO("Not yet implemented")
     }
 
