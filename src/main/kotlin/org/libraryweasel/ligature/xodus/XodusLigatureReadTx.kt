@@ -23,18 +23,26 @@ internal class XodusLigatureReadTx(private val environment: Environment): ReadTx
             val store = environment.openStore(collection.name, StoreConfig.WITHOUT_DUPLICATES, readTx)
             val cursor = store.openCursor(readTx)
             cursor.use {
-                val result = cursor.getSearchKeyRange(IntegerBinding.intToEntry(Prefixes.SPOC.prefix))
-                if (result != null && keyHasPrefix(cursor.key, Prefixes.SPOC.prefix)) {
-                    TODO()
-                } else {
-                    return@flow
+                var curValue = cursor.getSearchKeyRange(IntegerBinding.intToEntry(Prefixes.SPOC.prefix))
+                var curKey = cursor.key
+                while (curValue != null && keyHasPrefix(curKey, Prefixes.SPOC.prefix)) {
+                    emit(extractStatement(curKey))
+                    if (!cursor.next) {
+                        return@flow
+                    }
+                    curValue = cursor.value
+                    curKey = cursor.key
                 }
             }
         }
     }
 
     private fun keyHasPrefix(key: ByteIterable, prefix: Int): Boolean {
-        TODO("check if the cursor.key starts with the correct prefix")
+        TODO("check if the key starts with the correct prefix")
+    }
+
+    private fun extractStatement(key: ByteIterable): Statement {
+        TODO()
     }
 
     override suspend fun cancel() {
