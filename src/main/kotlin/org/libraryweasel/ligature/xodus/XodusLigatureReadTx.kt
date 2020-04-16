@@ -38,10 +38,26 @@ internal class XodusLigatureReadTx(private val environment: Environment): ReadTx
     }
 
     private fun keyHasPrefix(key: ByteIterable, prefix: Int): Boolean {
-        TODO("check if the key starts with the correct prefix")
+        return prefix == IntegerBinding.entryToInt(key.subIterable(0, Int.SIZE_BYTES))
     }
 
     private fun extractStatement(key: ByteIterable): Statement {
+        val subject = Entity(extractLong(key, 0))
+        val predicate = lookupPredicate(extractLong(key, 1))
+        val `object` = lookupObject(extractLong(key, 2))
+        val context = Entity(extractLong(key, 3))
+        return Statement(subject, predicate, `object`, context)
+    }
+
+    private fun extractLong(key: ByteIterable, offset: Int): Long {
+        TODO()
+    }
+
+    private fun lookupPredicate(id: Long): Predicate {
+        TODO()
+    }
+
+    private fun lookupObject(id: Long): Object {
         TODO()
     }
 
