@@ -1,1 +1,1 @@
-rootProject.name = "ligature-xodus"
+rootProject.name = "ligature-rocksdb"

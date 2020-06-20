@@ -2,7 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-package org.libraryweasel.ligature.xodus
+package dev.ligature.rocksdb
 
 import jetbrains.exodus.ByteIterable
 import jetbrains.exodus.CompoundByteIterable
@@ -43,9 +43,9 @@ internal data class EncodedQuad(val prefix: Int, val first: Long, val second: Lo
             return EncodedQuad(
                     entryToInt(byteIterable.subIterable(0, Int.SIZE_BYTES)),
                     entryToLong(byteIterable.subIterable(Int.SIZE_BYTES, Int.SIZE_BYTES + Long.SIZE_BYTES)),
-                    entryToLong(byteIterable.subIterable(Int.SIZE_BYTES + Long.SIZE_BYTES, Int.SIZE_BYTES + Long.SIZE_BYTES*2)),
-                    entryToLong(byteIterable.subIterable(Int.SIZE_BYTES + Long.SIZE_BYTES*2, Int.SIZE_BYTES + Long.SIZE_BYTES*3)),
-                    entryToLong(byteIterable.subIterable(Int.SIZE_BYTES + Long.SIZE_BYTES*3, Int.SIZE_BYTES + Long.SIZE_BYTES*4))
+                    entryToLong(byteIterable.subIterable(Int.SIZE_BYTES + Long.SIZE_BYTES, Int.SIZE_BYTES + Long.SIZE_BYTES * 2)),
+                    entryToLong(byteIterable.subIterable(Int.SIZE_BYTES + Long.SIZE_BYTES * 2, Int.SIZE_BYTES + Long.SIZE_BYTES * 3)),
+                    entryToLong(byteIterable.subIterable(Int.SIZE_BYTES + Long.SIZE_BYTES * 3, Int.SIZE_BYTES + Long.SIZE_BYTES * 4))
             )
         }
     }

@@ -1,6 +1,6 @@
 plugins {
     id("org.jetbrains.kotlin.jvm").version("1.3.70")
-    maven
+    `maven-publish`
 }
 
 project.group = "dev.ligature"
@@ -12,7 +12,7 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.xodus:xodus-environment:1.3.124")
+    implementation("org.rocksdb:rocksdbjni:6.6.4")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.4")
     implementation("org.libraryweasel.ligature:ligature:0.1.0-SNAPSHOT")
@@ -22,4 +22,12 @@ dependencies {
 
 tasks.withType<Test> {
     useJUnitPlatform()
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            from(components["java"])
+        }
+    }
 }
