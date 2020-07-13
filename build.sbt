@@ -11,6 +11,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "ligature-rocksdb",
     libraryDependencies += "dev.ligature" %% "ligature" % "0.1.0-SNAPSHOT",
+    libraryDependencies += "org.rocksdb" % "rocksdbjni" % "6.6.4",
     libraryDependencies += scalaTest % Test,
     libraryDependencies += "dev.ligature" %% "ligature-test-suite" % "0.1.0-SNAPSHOT" % Test
   )

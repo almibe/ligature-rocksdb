@@ -4,7 +4,9 @@
 
 package dev.ligature.rocksdb
 
-import io.kotlintest.specs.StringSpec
-import org.libraryweasel.ligature.test.createSpec
+import dev.ligature.LigatureStore
+import dev.ligature.test.LigatureSuite
 
-class InMemorySpec: StringSpec({createSpec { XodusLigatureStore.open(InMemoryStorage) }() })
+class InMemorySpec extends LigatureSuite {
+  override def createStore(): LigatureStore = new RocksDBStore()
+}
