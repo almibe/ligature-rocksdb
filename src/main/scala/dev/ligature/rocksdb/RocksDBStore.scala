@@ -7,12 +7,12 @@ package dev.ligature.rocksdb
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicBoolean
 
-import dev.ligature.LigatureStore
+import dev.ligature.Ligature
 import dev.ligature.ReadTx
 import dev.ligature.WriteTx
 import java.util.concurrent.locks.ReentrantLock
 
-import org.rocksdb.RocksDB
+import org.rocksdb.{RocksDB, TransactionDB}
 
 sealed trait StorageType
 case class DirectoryStorage(path: Path) extends StorageType
@@ -20,7 +20,7 @@ case object InMemoryStorage extends StorageType
 
 class RocksDBStore(val storage: StorageType) extends LigatureStore {
     private val lock = new ReentrantLock()
-    private val db: RocksDB = open(storage)
+    private val db: TransactionDB = open(storage)
     private val open = new AtomicBoolean(true)
 
     private def open(storageType: StorageType): RocksDB = {

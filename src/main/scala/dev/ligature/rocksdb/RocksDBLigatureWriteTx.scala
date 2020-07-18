@@ -15,7 +15,7 @@ import jetbrains.exodus.env.StoreConfig
 import org.libraryweasel.ligature.*
 import java.lang.RuntimeException
 
-internal class XodusLigatureWriteTx(private val environment: Environment): WriteTx {
+internal class RocksDBLigatureWriteTx(private val environment: Environment): WriteTx {
     private val writeTx = environment.beginTransaction()
 
     @Synchronized override suspend fun addStatement(collection: CollectionName, statement: Statement) {

@@ -4,21 +4,11 @@
 
 package dev.ligature.rocksdb
 
-import jetbrains.exodus.ByteIterable
-import jetbrains.exodus.bindings.IntegerBinding
-import jetbrains.exodus.env.Environment
-import jetbrains.exodus.env.StoreConfig
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import org.libraryweasel.ligature.*
-import java.lang.RuntimeException
+import dev.ligature.ReadTx
+import org.rocksdb.{RocksDB, TransactionDB}
 
-internal class XodusLigatureReadTx(private val environment: Environment): ReadTx {
-    private val readTx = environment.beginReadonlyTransaction()
-
-    override suspend fun allStatements(collection: CollectionName): Flow<Statement> {
+class RocksDBReadTx(private val db: TransactionDB) extends ReadTx {
+    override def allStatements(collection: CollectionName): Flow<Statement> {
         return flow<Statement> {
             val store = environment.openStore(collection.name, StoreConfig.WITHOUT_DUPLICATES, readTx)
             val cursor = store.openCursor(readTx)
@@ -61,11 +51,11 @@ internal class XodusLigatureReadTx(private val environment: Environment): ReadTx
         TODO()
     }
 
-    override suspend fun cancel() {
+    override def cancel() {
         readTx.abort()
     }
 
-    override suspend fun collections(): Flow<CollectionName> {
+    override def collections(): Flow<CollectionName> {
         return if (isOpen()) { environment.getAllStoreNames(readTx).asFlow().map {
             CollectionName(it)
         }} else {
@@ -73,21 +63,21 @@ internal class XodusLigatureReadTx(private val environment: Environment): ReadTx
         }
     }
 
-    override suspend fun collections(prefix: CollectionName): Flow<CollectionName> {
+    override def collections(prefix: CollectionName): Flow<CollectionName> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun collections(from: CollectionName, to: CollectionName): Flow<CollectionName> {
+    override def collections(from: CollectionName, to: CollectionName): Flow<CollectionName> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun isOpen(): Boolean = !readTx.isFinished
+    override def isOpen(): Boolean = !readTx.isFinished
 
-    override suspend fun matchStatements(collection: CollectionName, subject: Entity?, predicate: Predicate?, `object`: Object?, context: Entity?): Flow<Statement> {
+    override def matchStatements(collection: CollectionName, subject: Entity?, predicate: Predicate?, `object`: Object?, context: Entity?): Flow<Statement> {
         TODO("Not yet implemented")
     }
 
-    override suspend fun matchStatements(collection: CollectionName, subject: Entity?, predicate: Predicate?, range: Range<*>, context: Entity?): Flow<Statement> {
+    override def matchStatements(collection: CollectionName, subject: Entity?, predicate: Predicate?, range: Range<*>, context: Entity?): Flow<Statement> {
         TODO("Not yet implemented")
     }
 }
