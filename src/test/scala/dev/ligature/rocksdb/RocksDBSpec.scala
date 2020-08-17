@@ -4,9 +4,11 @@
 
 package dev.ligature.rocksdb
 
-import dev.ligature.LigatureStore
+import dev.ligature.Ligature
 import dev.ligature.test.LigatureSuite
 
 class InMemorySpec extends LigatureSuite {
-  override def createStore(): LigatureStore = new RocksDBStore()
+
+
+  override def createStore(): Ligature = new LigatureRocksDB()
 }

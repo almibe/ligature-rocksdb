@@ -4,6 +4,6 @@
 
 package dev.ligature.rocksdb
 
-private class RocksDBReadTx {
+private class RocksDBWriteTx {
 
 }
